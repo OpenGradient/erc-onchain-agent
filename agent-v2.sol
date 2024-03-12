@@ -54,17 +54,15 @@ interface IERCAgentTool {
     
     /// @notice Runs the tool with the given input and returns its final answer
     ///   to the given task.
-    ///
     /// @param input The input to this tool that is generated using the inputDescription.
     /// @param resultHandler The contract that will receive the result of this tool execution,
     ///   must support the IERCAgentToolClient interface.
-    ///
     /// @return runId when the tool's execution is synchronous, the runId will be -1.
     ///   When it is asynchronous, a non-negative runId will be returned that will be passed to
     ///   the result handler once the operation is ready.
     /// @return result, only present when the tool was executed synchronously and runId is -1.
     ///   Do not use unless the runId returned was -1. 
-    function run(Input memory input, address resultHandler) external virtual returns (uint256 runId, string memory result);
+    function run(Input memory input, address resultHandler) external returns (int256 runId, string memory result);
     
     /// @notice check supported interfaces, adhereing to ERC165.
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
@@ -81,7 +79,7 @@ abstract contract IERCAgent is IERCAgentTool {
     /// @param requester the address that requested this execution
     /// @param answer the answer returned by the agent
     event AgentRunResult(
-        uint256 indexed runId,
+        int256 indexed runId,
         address requester, 
         string[] executionSteps,
         string answer);
@@ -90,10 +88,11 @@ abstract contract IERCAgent is IERCAgentTool {
     string modelId;
     string agentName;
     string agentDescription;
+    string basePrompt;
     IERCAgentTool.InputDescription agentInputDescription;
     IERCAgentTool[] tools;
     uint16 agentMaxIterations; 
-    uint256 currentRunId;
+    int256 currentRunId;
     
     /// @notice Creates a new agent
     /// @param _agentExecutorContract points to a contract that implements IERCAgentExecutor
@@ -101,6 +100,7 @@ abstract contract IERCAgent is IERCAgentTool {
     ///   can be an ID, name, or hash, depending on what the IERCAgentExecutor implementation details
     /// @param _name the name of the agent
     /// @param _description the description of the agent
+    /// @param _basePrompt the base prompt for the agent that describes its task to the LLM
     /// @param _tools the tools the agent should have access to
     /// @param _agentMaxIterations the maximum number of iterations an agent should take
     ///   when running a particular task. One iteration includes one use of a tool. Use
@@ -111,6 +111,7 @@ abstract contract IERCAgent is IERCAgentTool {
         string memory _name,
         string memory _description,
         string memory _inputDescription,
+        string memory _basePrompt,
         IERCAgentTool[] memory _tools,
         uint16 _agentMaxIterations
     ) {
@@ -118,11 +119,12 @@ abstract contract IERCAgent is IERCAgentTool {
         modelId = _modelId;
         agentName = _name;
         agentDescription = _description;
+        basePrompt = _basePrompt;
         
         IERCAgentTool.ParamDescription memory promptParam = 
             IERCAgentTool.ParamDescription(IERCAgentTool.ParamType.STRING, "prompt", _inputDescription);
         IERCAgentTool.ParamDescription[] memory params = 
-            new IERCAgentTool.ParamDescription[1];
+            new IERCAgentTool.ParamDescription[](1);
         params[0] = promptParam;
         agentInputDescription = IERCAgentTool.InputDescription(params);
         
@@ -148,7 +150,7 @@ abstract contract IERCAgent is IERCAgentTool {
     ///   Should be a succint description of what clients need to provide when
     ///   calling this agent.
     /// @return InputDescription of the input this agent.
-    function inputDescription() external view returns (IERCAgentTool.ParamDescription memory) {
+    function inputDescription() external view returns (IERCAgentTool.InputDescription memory) {
         return agentInputDescription;
     }
     
@@ -161,10 +163,10 @@ abstract contract IERCAgent is IERCAgentTool {
     ///   through the client interface.
     /// @return result, only present when the tool was executed synchronously and runId is -1.
     ///   Do not use unless the runId returned was -1. 
-    function run(IERCAgentTool.Input memory input, address resultHandler) external virtual returns (uint256, string memory) {
+    function run(IERCAgentTool.Input memory input, address resultHandler) external virtual returns (int256, string memory) {
         IERCAgentExecutor agentExecutor = IERCAgentExecutor(agentExecutorContract);
         string[] memory agentReasoning = new string[](agentMaxIterations);
-        string memory prompt = abi.decode(input.params[0].value, string);
+        (string memory prompt) = abi.decode(input.params[0].value, (string));
         currentRunId++;
         
         uint16 currentIteration = 0;
@@ -175,7 +177,7 @@ abstract contract IERCAgent is IERCAgentTool {
                 agentDescription,
                 tools,
                 agentReasoning,
-                input
+                prompt
             );
             
             if (iterationResult.isFinalAnswer) {
@@ -187,7 +189,7 @@ abstract contract IERCAgent is IERCAgentTool {
                 
                 emit AgentRunResult(
                     currentRunId,
-                    msg.from,
+                    msg.sender,
                     executionSteps,
                     iterationResult.finalAnswer
                 );
@@ -195,11 +197,11 @@ abstract contract IERCAgent is IERCAgentTool {
                 return (-1, iterationResult.finalAnswer);
             } else {
                 IERCAgentTool tool = iterationResult.tool;
-                (bool success, bytes memory data) = tool.call(iterationResult.toolInput);
+                (bool success, bytes memory data) = tool.run(iterationResult.toolInput, address(0));
 
                 require(success, "Tool execution failed");
                 // we require tools to return strings 
-                string memory result = abi.decode(data, string);
+                (string memory result) = abi.decode(data, (string));
                 
                 agentReasoning[currentIteration] = string.concat(
                     iterationResult.agentReasoning,
@@ -211,9 +213,6 @@ abstract contract IERCAgent is IERCAgentTool {
         
         require(false, "Agent failed to produce final answer within agentMaxIterations");
     }
-    
-    /// @notice check supported interfaces, adhereing to ERC165.
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }
 
 
@@ -247,7 +246,7 @@ interface IERCAgentClient {
     ///   that they originally issued the request for
     /// @param runId the runId that was returned by the run call of agent
     /// @param result the final answer and result of the requested task from the agent
-    function handleAgentResult(uint256 runId, string memory result) external;
+    function handleAgentResult(int256 runId, string memory result) external;
     
     /// @notice check supported interfaces, adhereing to ERC165.
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
@@ -284,16 +283,24 @@ abstract contract IERCAgentSmartContractTool is IERCAgentTool {
         return toolDescription;
     }
  
-    function inputDescription() external view returns (string memory) {
-        return "";
+    function inputDescription() external view returns (IERCAgentTool.InputDescription memory) {
+        IERCAgentTool.ParamDescription memory paramDescriptions = 
+            IERCAgentTool.ParamDescription[](0);
+        return IERCAgentTool.InputDescription(paramDescriptions);
     }
        
-    function run(string memory toolArguments) public virtual returns (bytes memory) {
-        bytes memory data = abi.encodeWithSelector(toolSelector, toolContract, toolArguments);
+    function run(IERCAgentTool.Input memory input, address resultHandler) external virtual returns (int256, string memory) {
+        bytes memory data = abi.encodeWithSelector(toolSelector, toolContract, input.params);
         
         (bool success, bytes memory result) = toolContract.call(data);
         require(success, "Tool call failed");
-        return result;
+
+        // TODO convert to observation
+        return (-1, "");
+    }
+
+    function supportsInterface(bytes4 interfaceId) external view override returns (bool) {
+        return false;
     }
 }
 
@@ -309,14 +316,23 @@ contract WalletAgent is IERCAgent {
     constructor() IERCAgent(
         address(0x19),
         "llama_model_3",
+        "Wallet Agent",
+        "Use this to deploy or withdraw tokens from a liquidity pool",
+        "The action you want to take, the address of the tokens, and the amount",
         string(abi.encodePacked(
             "You are an agent deployed on an Ethereum blockchain, responsible for managing a user's wallet. ", 
             "The wallet's owner will give you instructons in simple terms, ",
             "and your goal is to execute the instructions from the user, given the list of tools you can use...")),
-        new IERCAgentSmartContractTool[](3)
+        new IERCAgentSmartContractTool[](3),
+        10
     ) {
         tools[0] = new IERCAgentSmartContractTool("Deploy", "Deploy funds into the pool", address(0x123), Pool.deploy.selector, "<deploy-function-abi>");
         tools[1] = new IERCAgentSmartContractTool("Withdraw", "Withdraw funds from the pool", address(0x123), Pool.withdraw.selector, "<withdraw-function-abi>");
         tools[2] = new IERCAgentSmartContractTool("ViewBalance", "See user's balance in the pool", address(0x123), Pool.balance.selector, "<balance-function-abi>");
+    }
+
+    function supportsInterface(bytes4 interfaceId) external view override returns (bool) {
+        // TODO
+        return false;
     }
 }
