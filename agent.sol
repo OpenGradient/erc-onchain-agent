@@ -347,7 +347,7 @@ contract WalletAgent is IERCAgent {
             "You are an agent deployed on an Ethereum blockchain, responsible for managing a user's wallet. ", 
             "The wallet's owner will give you instructons in simple terms, ",
             "and your goal is to execute the instructions from the user, given the list of tools you can use...")),
-        new IERCAgentTool[](3),
+        new IERCAgentTool[](4),
         10
     ) {
         ParamDescription[] memory deployParams = new ParamDescription[](2);
@@ -366,5 +366,8 @@ contract WalletAgent is IERCAgent {
         viewBalanceParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to view balance for");
         tools[2] = new IERCAgentSmartContractTool(
             "ViewBalance", "See user's balance in the pool", address(0x123), Pool.balance.selector, IERCAgentTool.InputDescription(viewBalanceParams));
+        
+        // reusing existing tool
+        tools[3] = IERCAgentTool(address(0x12));
     }
 }
