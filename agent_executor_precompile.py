@@ -8,7 +8,6 @@ IERCAgentTool = {}
 abi = {}
 
 def runNextIteration(modelId, basePrompt, tools, agentReasoning, prompt):
-    toolsByName = {tool.name: tool for tool in tools}
     llm = modelRegistry.get(modelId)
     reasoningEngine = reasoningRegistry.get(Engines.RE_ACT)
 
@@ -17,6 +16,7 @@ def runNextIteration(modelId, basePrompt, tools, agentReasoning, prompt):
         'description': tool.description(),
         'inputDescription': tool.inputDescription()
     } for tool in tools]
+    toolsByName = {tool.name: tool for tool in toolsMetadata}
     
     llmPrompt = reasoningEngine.buildPrompt(basePrompt, toolsMetadata, agentReasoning, prompt)
     llmOutput = llm.run(llmPrompt)
