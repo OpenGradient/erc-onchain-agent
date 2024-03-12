@@ -7,12 +7,12 @@ AgentIterationResult = {}
 IERCAgentTool = {}
 abi = {}
 
-def executeAgent(modelId, agentName, agentDescription, tools, agentReasoning, prompt):
+def runNextIteration(modelId, basePrompt, tools, agentReasoning, prompt):
     toolsByName = {tool.name: tool for tool in tools}
     llm = modelRegistry.get(modelId)
     reasoningEngine = reasoningRegistry.get(Engines.RE_ACT)
     
-    llmPrompt = reasoningEngine.buildPrompt(agentDescription, tools, agentReasoning, prompt)
+    llmPrompt = reasoningEngine.buildPrompt(basePrompt, tools, agentReasoning, prompt)
     llmOutput = llm.run(llmPrompt)
     nextStep = reasoningEngine.parse(llmOutput)
     

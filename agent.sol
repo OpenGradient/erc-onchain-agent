@@ -205,8 +205,6 @@ abstract contract IERCAgent is IERCAgentTool {
         for (; currentIteration < agentMaxIterations; currentIteration++) {
             AgentIterationResult memory iterationResult = agentExecutor.runNextIteration(
                 modelId,
-                agentName,
-                agentDescription,
                 basePrompt,
                 tools,
                 agentReasoning,
@@ -265,8 +263,6 @@ struct AgentIterationResult {
 interface IERCAgentExecutor {
     function runNextIteration(
         string memory modelId,
-        string memory agentName,
-        string memory agentDescription,
         string memory basePrompt,
         IERCAgentTool[] memory tools,
         string[] memory agentReasoning,
