@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
+
 // ========= HIGH LEVEL INTERFACES ========
 
 
@@ -78,6 +79,7 @@ interface IERCAgentTool {
     function run(Input memory input, address resultHandler) external returns (int256 runId, string memory result);
 }
 
+/// @notice Used to receive the result of asynchronous agent executions
 interface IERCAgentClient {
    
     /// @notice Used to pass the result of the agent invocation back to the caller.
@@ -247,6 +249,7 @@ abstract contract IERCAgent is IERCAgentTool {
     }
 }
 
+/// @notice represents the result of a single iteration of the agent reasoning loop
 struct AgentIterationResult {
    bool isFinalAnswer;
    
@@ -313,10 +316,8 @@ contract IERCAgentSmartContractTool is IERCAgentTool {
         return toolDescription;
     }
  
-    function inputDescription() external pure returns (IERCAgentTool.InputDescription memory) {
-        // TODO fill out
-        IERCAgentTool.ParamDescription[] memory paramDescriptions;
-        return IERCAgentTool.InputDescription(paramDescriptions);
+    function inputDescription() external view returns (IERCAgentTool.InputDescription memory) {
+        return toolInputDescription;
     }
        
     function run(IERCAgentTool.Input memory input, address resultHandler) external virtual returns (int256, string memory) {
@@ -337,6 +338,7 @@ interface Pool {
     function balance(address asset) external returns (uint256);
 }
 
+/// @notice demo agent
 contract WalletAgent is IERCAgent {
 
     constructor() IERCAgent(
