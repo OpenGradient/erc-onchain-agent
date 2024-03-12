@@ -1,8 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-// import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-
 interface IERCAgentTool {
 
     /// @notice describes the various types of input parameters a tool can have.
@@ -69,9 +67,6 @@ interface IERCAgentTool {
     /// @return result only present when the tool was executed synchronously and runId is -1.
     ///   Do not use unless the runId returned was -1. 
     function run(Input memory input, address resultHandler) external returns (int256 runId, string memory result);
-    
-    /// @notice check supported interfaces, adhereing to ERC165.
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }
 
 
@@ -165,7 +160,7 @@ abstract contract IERCAgent is IERCAgentTool {
     ///   to the given task.
     /// @param input The input to this agent that is generated using the inputDescription.
     /// @param resultHandler The contract that will receive the result of this agent execution,
-    ///   must support the IERCAgentClient interface.
+    ///   must support the IERCAgentClient interface. 
     /// @return runId for this request that will be used when providing the result
     ///   through the client interface.
     /// @return result, only present when the tool was executed synchronously and runId is -1.
@@ -208,8 +203,12 @@ abstract contract IERCAgent is IERCAgentTool {
                 return (-1, iterationResult.finalAnswer);
             } else {
                 IERCAgentTool tool = iterationResult.tool;
-                (int256 runId, string memory result) = tool.run(iterationResult.toolInput, address(0));
-                require(runId == -1, "Tool execution was asynchronous");
+                (bool success, bytes memory returnValue) = address(tool).call(
+                    abi.encodeWithSelector(IERCAgentTool.run.selector, iterationResult.toolInput));
+                require(success, "Tool call failed");
+
+                (int256 runId, string memory result) = abi.decode(returnValue, (int256, string));
+                require(runId == -1, "Only synchronous tools supported");
                 
                 agentReasoning[currentIteration] = string.concat(
                     iterationResult.agentReasoning,
@@ -219,7 +218,7 @@ abstract contract IERCAgent is IERCAgentTool {
             }
         }
         
-        require(false, "Agent failed to produce final answer within agentMaxIterations");
+        revert("Agent failed to produce final answer within agentMaxIterations");
     }
 }
 
@@ -292,7 +291,7 @@ contract IERCAgentSmartContractTool is IERCAgentTool {
         return toolDescription;
     }
  
-    function inputDescription() external view returns (IERCAgentTool.InputDescription memory) {
+    function inputDescription() external pure returns (IERCAgentTool.InputDescription memory) {
         IERCAgentTool.ParamDescription[] memory paramDescriptions;
         return IERCAgentTool.InputDescription(paramDescriptions);
     }
@@ -305,10 +304,6 @@ contract IERCAgentSmartContractTool is IERCAgentTool {
 
         // TODO convert to observation
         return (-1, "");
-    }
-
-    function supportsInterface(bytes4 interfaceId) external view override returns (bool) {
-        return false;
     }
 }
 
@@ -337,10 +332,5 @@ contract WalletAgent is IERCAgent {
         tools[0] = new IERCAgentSmartContractTool("Deploy", "Deploy funds into the pool", address(0x123), Pool.deploy.selector, "<deploy-function-abi>");
         tools[1] = new IERCAgentSmartContractTool("Withdraw", "Withdraw funds from the pool", address(0x123), Pool.withdraw.selector, "<withdraw-function-abi>");
         tools[2] = new IERCAgentSmartContractTool("ViewBalance", "See user's balance in the pool", address(0x123), Pool.balance.selector, "<balance-function-abi>");
-    }
-
-    function supportsInterface(bytes4 interfaceId) external view override returns (bool) {
-        // TODO
-        return false;
     }
 }
