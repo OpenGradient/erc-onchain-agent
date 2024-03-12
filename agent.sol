@@ -1,6 +1,9 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
+// ========= HIGH LEVEL INTERFACES ========
+
+
 interface IERCAgentTool {
 
     /// @notice describes the various types of input parameters a tool can have.
@@ -74,6 +77,22 @@ interface IERCAgentTool {
     ///   Do not use unless the runId returned was -1. 
     function run(Input memory input, address resultHandler) external returns (int256 runId, string memory result);
 }
+
+interface IERCAgentClient {
+   
+    /// @notice Used to pass the result of the agent invocation back to the caller.
+    /// @dev implementations must verify that the sender of this message is the agent
+    ///   that they originally issued the request for
+    /// @param runId the runId that was returned by the run call of agent
+    /// @param result the final answer and result of the requested task from the agent
+    function handleAgentResult(int256 runId, string memory result) external;
+    
+    /// @notice check supported interfaces, adhereing to ERC165.
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
+}
+
+
+/// ========= SYNCHRONOUS AGENT IMPLEMENTATION ==========
 
 
 /// @notice Implements a synchronous agent that's backed by an on-chain agentExecutor contract
@@ -228,7 +247,6 @@ abstract contract IERCAgent is IERCAgentTool {
     }
 }
 
-
 struct AgentIterationResult {
    bool isFinalAnswer;
    
@@ -253,18 +271,7 @@ interface IERCAgentExecutor {
 }
 
 
-interface IERCAgentClient {
-   
-    /// @notice Used to pass the result of the agent invocation back to the caller.
-    /// @dev implementations must verify that the sender of this message is the agent
-    ///   that they originally issued the request for
-    /// @param runId the runId that was returned by the run call of agent
-    /// @param result the final answer and result of the requested task from the agent
-    function handleAgentResult(int256 runId, string memory result) external;
-    
-    /// @notice check supported interfaces, adhereing to ERC165.
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
-}
+// ======= EXAMPLE AGENT AND TOOLS ==========
 
 
 /// @notice Simple wrapper tool implementation that can be used to expose simple functions
@@ -323,7 +330,7 @@ contract IERCAgentSmartContractTool is IERCAgentTool {
     }
 }
 
-
+// demo contract
 interface Pool {
     function deploy(address asset, uint256 amount) external;
     function withdraw(address asset, uint256 amount) external;
