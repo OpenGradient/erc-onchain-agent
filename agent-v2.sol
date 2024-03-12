@@ -197,16 +197,13 @@ abstract contract IERCAgent is IERCAgentTool {
                 return (-1, iterationResult.finalAnswer);
             } else {
                 IERCAgentTool tool = iterationResult.tool;
-                (bool success, bytes memory data) = tool.run(iterationResult.toolInput, address(0));
-
-                require(success, "Tool execution failed");
-                // we require tools to return strings 
-                (string memory result) = abi.decode(data, (string));
+                (int256 runId, string memory result) = tool.run(iterationResult.toolInput, address(0));
+                require(runId == -1, "Tool execution was asynchronous");
                 
                 agentReasoning[currentIteration] = string.concat(
                     iterationResult.agentReasoning,
                     "\nObservation: ",
-                    data,
+                    result,
                     "\n");
             }
         }
@@ -284,8 +281,7 @@ contract IERCAgentSmartContractTool is IERCAgentTool {
     }
  
     function inputDescription() external view returns (IERCAgentTool.InputDescription memory) {
-        IERCAgentTool.ParamDescription memory paramDescriptions = 
-            IERCAgentTool.ParamDescription[](0);
+        IERCAgentTool.ParamDescription[] memory paramDescriptions;
         return IERCAgentTool.InputDescription(paramDescriptions);
     }
        
