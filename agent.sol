@@ -267,26 +267,35 @@ interface IERCAgentClient {
 }
 
 
+/// @notice Simple wrapper tool implementation that can be used to expose simple functions
+///   on smart contracts as tools.
 contract IERCAgentSmartContractTool is IERCAgentTool {
 
     string toolName;
     string toolDescription;
-    address toolContract; // contract that implements the tool
-    bytes4 toolSelector; // specific method on the contract to use
-    string toolAbi; // LLM will use this to create method arguments
+    address toolContract; 
+    bytes4 toolSelector; 
+    IERCAgentTool.InputDescription toolInputDescription;
     
+    /// @notice Creates a new tool.
+    /// @param _name of the tool
+    /// @param _description of the tool
+    /// @param _toolContract address of the contract that implements the tool
+    /// @param _toolSelector selector of the function on _toolContract that the tool should use
+    /// @param _inputDescription must contain all parameters of the function _toolSelector is pointing
+    ///   to. Right now, only supports primitive data types.
     constructor(
         string memory _name,
         string memory _description,
         address _toolContract,
         bytes4 _toolSelector,
-        string memory _toolAbi
+        IERCAgentTool.InputDescription memory _inputDescription
     ) {
         toolName = _name;
         toolDescription = _description;
         toolContract = _toolContract;
         toolSelector = _toolSelector;
-        toolAbi = _toolAbi;
+        toolInputDescription = _inputDescription;
     }
     
     function name() external view returns (string memory) {
@@ -298,14 +307,15 @@ contract IERCAgentSmartContractTool is IERCAgentTool {
     }
  
     function inputDescription() external pure returns (IERCAgentTool.InputDescription memory) {
+        // TODO fill out
         IERCAgentTool.ParamDescription[] memory paramDescriptions;
         return IERCAgentTool.InputDescription(paramDescriptions);
     }
        
     function run(IERCAgentTool.Input memory input, address resultHandler) external virtual returns (int256, string memory) {
-        bytes memory data = abi.encodeWithSelector(toolSelector, toolContract, input.params);
-        
-        (bool success, bytes memory result) = toolContract.call(data);
+        bytes memory callData = abi.encodeWithSelector(toolSelector, input.abiEncodedParams);
+        (bool success, bytes memory returnValue) = toolContract.call(callData);
+
         require(success, "Tool call failed");
 
         // TODO convert to observation
@@ -335,8 +345,16 @@ contract WalletAgent is IERCAgent {
         new IERCAgentTool[](3),
         10
     ) {
-        tools[0] = new IERCAgentSmartContractTool("Deploy", "Deploy funds into the pool", address(0x123), Pool.deploy.selector, "<deploy-function-abi>");
-        tools[1] = new IERCAgentSmartContractTool("Withdraw", "Withdraw funds from the pool", address(0x123), Pool.withdraw.selector, "<withdraw-function-abi>");
-        tools[2] = new IERCAgentSmartContractTool("ViewBalance", "See user's balance in the pool", address(0x123), Pool.balance.selector, "<balance-function-abi>");
+        ParamDescription[] memory deployParams = new ParamDescription[](0);
+        tools[0] = new IERCAgentSmartContractTool(
+            "Deploy", "Deploy funds into the pool", address(0x123), Pool.deploy.selector, IERCAgentTool.InputDescription(deployParams));
+
+        ParamDescription[] memory withdrawParams = new ParamDescription[](0);
+        tools[1] = new IERCAgentSmartContractTool(
+            "Withdraw", "Withdraw funds from the pool", address(0x123), Pool.withdraw.selector, IERCAgentTool.InputDescription(withdrawParams));
+
+        ParamDescription[] memory viewBalanceParams = new ParamDescription[](0);
+        tools[2] = new IERCAgentSmartContractTool(
+            "ViewBalance", "See user's balance in the pool", address(0x123), Pool.balance.selector, IERCAgentTool.InputDescription(viewBalanceParams));
     }
 }
