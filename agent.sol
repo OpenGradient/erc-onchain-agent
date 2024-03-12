@@ -19,7 +19,8 @@ interface IERCAgentTool {
         ADDRESS_ARRAY,
         BOOL_ARAY,
         INT_ARRAY,
-        UINT_ARRAY
+        UINT_ARRAY,
+        VOID
     }
     
     /// @notice Describes a single parameter for a tool.
@@ -237,7 +238,7 @@ abstract contract IERCAgent is IERCAgentTool {
                 
                 agentReasoning[currentIteration] = string.concat(
                     iterationResult.agentReasoning,
-                    "\nObservation: ",
+                    "Observation: ",
                     result,
                     "\n");
             }
@@ -261,6 +262,7 @@ struct AgentIterationResult {
 
 // can be implemented as a precompile
 interface IERCAgentExecutor {
+
     function runNextIteration(
         string memory modelId,
         string memory basePrompt,
@@ -272,16 +274,27 @@ interface IERCAgentExecutor {
 
 // ======= EXAMPLE AGENT AND TOOLS ==========
 
+/// @notice interface for turning a contract function's return value into a human-readable string
+interface ToolResultConverter {
+    function convertToString(bytes memory result) external returns (string memory);
+}
 
 /// @notice Simple wrapper tool implementation that can be used to expose simple functions
 ///   on smart contracts as tools.
-contract IERCAgentSmartContractTool is IERCAgentTool {
+contract SimpleSmartContractTool is IERCAgentTool {
 
     string toolName;
     string toolDescription;
     address toolContract; 
     bytes4 toolSelector; 
     IERCAgentTool.InputDescription toolInputDescription;
+
+    ToolResultConverter toolResultConverter;
+    bool useStaticResult;
+    string staticResult;
+
+    // this implementation only supports singular return types
+    IERCAgentTool.ParamType outputType;
     
     /// @notice Creates a new tool.
     /// @param _name of the tool
@@ -295,13 +308,19 @@ contract IERCAgentSmartContractTool is IERCAgentTool {
         string memory _description,
         address _toolContract,
         bytes4 _toolSelector,
-        IERCAgentTool.InputDescription memory _inputDescription
+        IERCAgentTool.InputDescription memory _inputDescription,
+        ToolResultConverter _toolResultConverter,
+        bool _useStaticResult,
+        string memory _staticResult
     ) {
         toolName = _name;
         toolDescription = _description;
         toolContract = _toolContract;
         toolSelector = _toolSelector;
         toolInputDescription = _inputDescription;
+        toolResultConverter = _toolResultConverter;
+        useStaticResult = _useStaticResult;
+        staticResult = _staticResult;
     }
     
     function name() external view returns (string memory) {
@@ -319,11 +338,13 @@ contract IERCAgentSmartContractTool is IERCAgentTool {
     function run(IERCAgentTool.Input memory input, address resultHandler) external virtual returns (int256, string memory) {
         bytes memory callData = abi.encodeWithSelector(toolSelector, input.abiEncodedParams);
         (bool success, bytes memory returnValue) = toolContract.call(callData);
-
         require(success, "Tool call failed");
 
-        // TODO convert to observation
-        return (-1, "");
+        if (useStaticResult == true) {
+            return (-1, staticResult);
+        } else {
+            return (-1, toolResultConverter.convertToString(returnValue));
+        }
     }
 }
 
@@ -353,19 +374,40 @@ contract WalletAgent is IERCAgent {
         ParamDescription[] memory deployParams = new ParamDescription[](2);
         deployParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to deposit");
         deployParams[1] = ParamDescription(ParamType.INT, "amount", "amount of tokens to deposit");
-        tools[0] = new IERCAgentSmartContractTool(
-            "Deploy", "Deploy funds into the pool", address(0x123), Pool.deploy.selector, IERCAgentTool.InputDescription(deployParams));
+        tools[0] = new SimpleSmartContractTool(
+            "Deploy",
+            "Deploy funds into the pool",
+            address(0x123),
+            Pool.deploy.selector,
+            IERCAgentTool.InputDescription(deployParams),
+            ToolResultConverter(address(0)),
+            true,
+            "Successfully deployed");
 
         ParamDescription[] memory withdrawParams = new ParamDescription[](2);
         withdrawParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to withdraw");
         withdrawParams[1] = ParamDescription(ParamType.INT, "amount", "amount of tokens to withdraw");
-        tools[1] = new IERCAgentSmartContractTool(
-            "Withdraw", "Withdraw funds from the pool", address(0x123), Pool.withdraw.selector, IERCAgentTool.InputDescription(withdrawParams));
+        tools[1] = new SimpleSmartContractTool(
+            "Withdraw",
+            "Withdraw funds from the pool",
+            address(0x123),
+            Pool.withdraw.selector,
+            IERCAgentTool.InputDescription(withdrawParams),
+            ToolResultConverter(address(0)),
+            true,
+            "Successfully withdrawn");
 
         ParamDescription[] memory viewBalanceParams = new ParamDescription[](1);
         viewBalanceParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to view balance for");
-        tools[2] = new IERCAgentSmartContractTool(
-            "ViewBalance", "See user's balance in the pool", address(0x123), Pool.balance.selector, IERCAgentTool.InputDescription(viewBalanceParams));
+        tools[2] = new SimpleSmartContractTool(
+            "ViewBalance",
+            "See user's balance in the pool",
+            address(0x123),
+            Pool.balance.selector,
+            IERCAgentTool.InputDescription(viewBalanceParams),
+            address(0),
+            false,
+            "");
         
         // reusing existing tool
         tools[3] = IERCAgentTool(address(0x12));
