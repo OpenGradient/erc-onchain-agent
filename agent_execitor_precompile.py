@@ -22,8 +22,9 @@ def executeAgent(modelId, agentName, agentDescription, tools, agentReasoning, pr
     tool = toolsByName.get(nextStep.toolName)
     toolInputByName = {input.name: input for input in tool.inputDescription.paramDescriptions}
     
-    parsedParams = {}
     params = json.parse(nextStep.params)
+    parsedParams = {}
+
     for param in params.array():
         paramDescription = toolInputByName[param.name]
         parsedParams[param.name] = IERCAgentTool.ParamValue(
