@@ -28,10 +28,12 @@ def executeAgent(modelId, agentName, agentDescription, tools, agentReasoning, pr
         paramDescription = toolInputByName[param.name]
         parsedParams[param.name] = IERCAgentTool.ParamValue(
             type=paramDescription.type,
-            abi.encode(param.value, paramDescription.type))
+            value=abi.encode(param.value, paramDescription.type))
+
+    abiEncodedParams = abi.encode([params.value for params in parsedParams])
     
     return AgentIterationResult(
         isFinalAnswer=False,
         tool=tool,
-        params=parsedParams,
+        toolInput=IERCAgentTool.Input(params=parsedParams, abiEncodedParams=abiEncodedParams),
         agentReasoning=nextStep.reasoning)
