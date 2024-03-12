@@ -1,3 +1,4 @@
+//SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
 // import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
@@ -63,7 +64,7 @@ interface IERCAgentTool {
     ///   the result handler once the operation is ready.
     /// @return result, only present when the tool was executed synchronously and runId is -1.
     ///   Do not use unless the runId returned was -1. 
-    function run(Input memory input, address resultHandler) external virtual returns (uint256 runId, string result);
+    function run(Input memory input, address resultHandler) external virtual returns (uint256 runId, string memory result);
     
     /// @notice check supported interfaces, adhereing to ERC165.
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
@@ -118,9 +119,10 @@ abstract contract IERCAgent is IERCAgentTool {
         agentName = _name;
         agentDescription = _description;
         
-        IERCAgentTool.ParamDescription promptParam = 
+        IERCAgentTool.ParamDescription memory promptParam = 
             IERCAgentTool.ParamDescription(IERCAgentTool.ParamType.STRING, "prompt", _inputDescription);
-        IERCAgentTool.ParamDescription[] params = new IERCAgentTool.ParamDescription[1];
+        IERCAgentTool.ParamDescription[] memory params = 
+            new IERCAgentTool.ParamDescription[1];
         params[0] = promptParam;
         agentInputDescription = IERCAgentTool.InputDescription(params);
         
@@ -159,18 +161,18 @@ abstract contract IERCAgent is IERCAgentTool {
     ///   through the client interface.
     /// @return result, only present when the tool was executed synchronously and runId is -1.
     ///   Do not use unless the runId returned was -1. 
-    function run(IERCAgentTool.Input memory input, address resultHandler) external virtual returns (uint256, string) {
+    function run(IERCAgentTool.Input memory input, address resultHandler) external virtual returns (uint256, string memory) {
         IERCAgentExecutor agentExecutor = IERCAgentExecutor(agentExecutorContract);
-        string[] memory agentReasoning = new string[agentMaxIterations];
+        string[] memory agentReasoning = new string[](agentMaxIterations);
         string memory prompt = abi.decode(input.params[0].value, string);
         currentRunId++;
         
         uint16 currentIteration = 0;
         for (; currentIteration < agentMaxIterations; currentIteration++) {
-            AgentIterationResult iterationResult = agentExecutor.runNextIteration(
+            AgentIterationResult memory iterationResult = agentExecutor.runNextIteration(
                 modelId,
-                name,
-                description,
+                agentName,
+                agentDescription,
                 tools,
                 agentReasoning,
                 input
@@ -178,7 +180,7 @@ abstract contract IERCAgent is IERCAgentTool {
             
             if (iterationResult.isFinalAnswer) {
                 // agent is done, emit event and return answer
-                string[] memory executionSteps = new string[currentIteration];
+                string[] memory executionSteps = new string[](currentIteration);
                 for (uint i = 0; i < currentIteration; i++) {
                     executionSteps[i] = agentReasoning[i];
                 }
@@ -238,7 +240,7 @@ interface IERCAgentExecutor {
 }
 
 
-interface IERCAgentClient is IERC165 {
+interface IERCAgentClient {
    
     /// @notice Used to pass the result of the agent invocation back to the caller.
     /// @dev implementations must verify that the sender of this message is the agent
@@ -311,10 +313,10 @@ contract WalletAgent is IERCAgent {
             "You are an agent deployed on an Ethereum blockchain, responsible for managing a user's wallet. ", 
             "The wallet's owner will give you instructons in simple terms, ",
             "and your goal is to execute the instructions from the user, given the list of tools you can use...")),
-        new ContractTool[](3)
+        new IERCAgentSmartContractTool[](3)
     ) {
-        contractTools[0] = new ContractTool("Deploy", "Deploy funds into the pool", address(0x123), Pool.deploy.selector, "<deploy-function-abi>");
-        contractTools[1] = new ContractTool("Withdraw", "Withdraw funds from the pool", address(0x123), Pool.withdraw.selector, "<withdraw-function-abi>");
-        contractTools[2] = new ContractTool("ViewBalance", "See user's balance in the pool", address(0x123), Pool.balance.selector, "<balance-function-abi>");
+        tools[0] = new IERCAgentSmartContractTool("Deploy", "Deploy funds into the pool", address(0x123), Pool.deploy.selector, "<deploy-function-abi>");
+        tools[1] = new IERCAgentSmartContractTool("Withdraw", "Withdraw funds from the pool", address(0x123), Pool.withdraw.selector, "<withdraw-function-abi>");
+        tools[2] = new IERCAgentSmartContractTool("ViewBalance", "See user's balance in the pool", address(0x123), Pool.balance.selector, "<balance-function-abi>");
     }
 }
