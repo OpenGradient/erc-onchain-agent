@@ -345,15 +345,20 @@ contract WalletAgent is IERCAgent {
         new IERCAgentTool[](3),
         10
     ) {
-        ParamDescription[] memory deployParams = new ParamDescription[](0);
+        ParamDescription[] memory deployParams = new ParamDescription[](2);
+        deployParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to deposit");
+        deployParams[1] = ParamDescription(ParamType.INT, "amount", "amount of tokens to deposit");
         tools[0] = new IERCAgentSmartContractTool(
             "Deploy", "Deploy funds into the pool", address(0x123), Pool.deploy.selector, IERCAgentTool.InputDescription(deployParams));
 
-        ParamDescription[] memory withdrawParams = new ParamDescription[](0);
+        ParamDescription[] memory withdrawParams = new ParamDescription[](2);
+        withdrawParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to withdraw");
+        withdrawParams[1] = ParamDescription(ParamType.INT, "amount", "amount of tokens to withdraw");
         tools[1] = new IERCAgentSmartContractTool(
             "Withdraw", "Withdraw funds from the pool", address(0x123), Pool.withdraw.selector, IERCAgentTool.InputDescription(withdrawParams));
 
-        ParamDescription[] memory viewBalanceParams = new ParamDescription[](0);
+        ParamDescription[] memory viewBalanceParams = new ParamDescription[](1);
+        viewBalanceParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to view balance for");
         tools[2] = new IERCAgentSmartContractTool(
             "ViewBalance", "See user's balance in the pool", address(0x123), Pool.balance.selector, IERCAgentTool.InputDescription(viewBalanceParams));
     }
