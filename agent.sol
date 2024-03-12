@@ -303,15 +303,22 @@ contract SimpleSmartContractTool is IERCAgentTool {
     /// @param _toolSelector selector of the function on _toolContract that the tool should use
     /// @param _inputDescription must contain all parameters of the function _toolSelector is pointing
     ///   to. Right now, only supports primitive data types.
+    /// @param _useStaticResult when true, the tool invocation will return a static result string to the
+    ///   agent.
+    /// @param _staticResult the result string to return when _useStaticResult is set to true.
+    ///   Otherwise ignored.
+    /// @param _toolResultConverter when _useStaticResult is false, the return bytes from the contract
+    ///   invocation will be passed to this converter to turn it into a human-readable format for the agent
+    ///   to be able to reason about the result.
     constructor(
         string memory _name,
         string memory _description,
         address _toolContract,
         bytes4 _toolSelector,
         IERCAgentTool.InputDescription memory _inputDescription,
-        ToolResultConverter _toolResultConverter,
         bool _useStaticResult,
-        string memory _staticResult
+        string memory _staticResult,
+        ToolResultConverter _toolResultConverter
     ) {
         toolName = _name;
         toolDescription = _description;
@@ -355,6 +362,17 @@ interface Pool {
     function balance(address asset) external returns (uint256);
 }
 
+// import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+
+contract ViewBalanceResultConverter is ToolResultConverter {
+
+    function convertToString(bytes memory result) external override returns (string memory) {
+        (uint256 balance) = abi.decode(result, (uint256));
+
+        return string.concat("The balance is: ", Strings.toString(balance));
+    }
+}
+
 /// @notice demo agent
 contract WalletAgent is IERCAgent {
 
@@ -380,9 +398,9 @@ contract WalletAgent is IERCAgent {
             address(0x123),
             Pool.deploy.selector,
             IERCAgentTool.InputDescription(deployParams),
-            ToolResultConverter(address(0)),
             true,
-            "Successfully deployed");
+            "Successfully deployed",
+            ToolResultConverter(address(0)));
 
         ParamDescription[] memory withdrawParams = new ParamDescription[](2);
         withdrawParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to withdraw");
@@ -393,9 +411,9 @@ contract WalletAgent is IERCAgent {
             address(0x123),
             Pool.withdraw.selector,
             IERCAgentTool.InputDescription(withdrawParams),
-            ToolResultConverter(address(0)),
             true,
-            "Successfully withdrawn");
+            "Successfully withdrawn",
+            ToolResultConverter(address(0)));
 
         ParamDescription[] memory viewBalanceParams = new ParamDescription[](1);
         viewBalanceParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to view balance for");
@@ -405,9 +423,9 @@ contract WalletAgent is IERCAgent {
             address(0x123),
             Pool.balance.selector,
             IERCAgentTool.InputDescription(viewBalanceParams),
-            address(0),
             false,
-            "");
+            "",
+            new ViewBalanceResultConverter());
         
         // reusing existing tool
         tools[3] = IERCAgentTool(address(0x12));
