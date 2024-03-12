@@ -253,7 +253,7 @@ interface IERCAgentClient {
 }
 
 
-abstract contract IERCAgentSmartContractTool is IERCAgentTool {
+contract IERCAgentSmartContractTool is IERCAgentTool {
 
     string toolName;
     string toolDescription;
@@ -323,7 +323,7 @@ contract WalletAgent is IERCAgent {
             "You are an agent deployed on an Ethereum blockchain, responsible for managing a user's wallet. ", 
             "The wallet's owner will give you instructons in simple terms, ",
             "and your goal is to execute the instructions from the user, given the list of tools you can use...")),
-        new IERCAgentSmartContractTool[](3),
+        new IERCAgentTool[](3),
         10
     ) {
         tools[0] = new IERCAgentSmartContractTool("Deploy", "Deploy funds into the pool", address(0x123), Pool.deploy.selector, "<deploy-function-abi>");
