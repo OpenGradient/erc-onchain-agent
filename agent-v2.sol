@@ -170,9 +170,12 @@ abstract contract IERCAgent is IERCAgentTool {
     /// @return result, only present when the tool was executed synchronously and runId is -1.
     ///   Do not use unless the runId returned was -1. 
     function run(IERCAgentTool.Input memory input, address resultHandler) external virtual returns (int256, string memory) {
+        require(input.params.length == 1, "Agent always expects a single parameter");
+
         IERCAgentExecutor agentExecutor = IERCAgentExecutor(agentExecutorContract);
         string[] memory agentReasoning = new string[](agentMaxIterations);
         (string memory prompt) = abi.decode(input.params[0].value, (string));
+
         currentRunId++;
         
         uint16 currentIteration = 0;
@@ -181,6 +184,7 @@ abstract contract IERCAgent is IERCAgentTool {
                 modelId,
                 agentName,
                 agentDescription,
+                basePrompt,
                 tools,
                 agentReasoning,
                 prompt
@@ -236,6 +240,7 @@ interface IERCAgentExecutor {
         string memory modelId,
         string memory agentName,
         string memory agentDescription,
+        string memory basePrompt,
         IERCAgentTool[] memory tools,
         string[] memory agentReasoning,
         string memory prompt) external returns (AgentIterationResult memory);
