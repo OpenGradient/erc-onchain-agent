@@ -60,7 +60,7 @@ interface IERCAgentTool {
     /// @return runId when the tool's execution is synchronous, the runId will be -1.
     ///   When it is asynchronous, a non-negative runId will be returned that will be passed to
     ///   the result handler once the operation is ready.
-    /// @return result, only present when the tool was executed synchronously and runId is -1.
+    /// @return result only present when the tool was executed synchronously and runId is -1.
     ///   Do not use unless the runId returned was -1. 
     function run(Input memory input, address resultHandler) external returns (int256 runId, string memory result);
     
