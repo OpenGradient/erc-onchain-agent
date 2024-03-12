@@ -275,6 +275,7 @@ interface IERCAgentExecutor {
 // ======= EXAMPLE AGENT AND TOOLS ==========
 
 /// @notice interface for turning a contract function's return value into a human-readable string
+///   so the agent can understand what the tool's execution resulted in.
 interface ToolResultConverter {
     function convertToString(bytes memory result) external returns (string memory);
 }
