@@ -117,10 +117,10 @@ interface IERCAgentTool is IERC165 {
 }
 ```
 
-* name: Gives a meaningful and reasonably unique name to the tool. LLM-backed agents might use this to decide when it’s appropriate to use this tool. Example could be TokenTransferTool, ViewBalanceTool
-* description: Gives a short description of what the tool does, and when it should be used. LLM-backed agents could use this description to decide if it’s appropriate to utilize this tool. An example might be: Transfers tokens from one user to another. 
-* inputDescription: Describes the format of the input (if any) the tool expects to receive. LLM-backed agents might use this to generate an input for the specific task they want to achieve. Example might be: The input should mention the origin and target address, the token address, and amount. 
-* run: Triggers the execution of an tool with a given input. Tools can either be executed synchronously or asynchronously. When executed synchronously, the result will be immediately returned to the called. However, when it is executed asynchronously, result will be passed to the resultHandler, which must implement the IERCAgentClient interface. When executed asynchronously, the run method will commit and return a runId that will be used to invoke the resultHandler once the agent execution has completed. This allows tools and agents to be executed off-chain, and to post the result through this callback mechanism once it’s ready. In addition, the run method may also be used to add custom checks or verification logic to the tool.
+- `name`: Gives a meaningful and reasonably unique name to the tool. LLM-backed agents might use this to decide when it’s appropriate to use this tool. Example could be TokenTransferTool, ViewBalanceTool
+- `description`: Gives a short description of what the tool does, and when it should be used. LLM-backed agents could use this description to decide if it’s appropriate to utilize this tool. An example might be: Transfers tokens from one user to another. 
+- `inputDescription`: Describes the format of the input (if any) the tool expects to receive. LLM-backed agents might use this to generate an input for the specific task they want to achieve. Example might be: The input should mention the origin and target address, the token address, and amount. 
+- `run`: Triggers the execution of an tool with a given input. Tools can either be executed synchronously or asynchronously. When executed synchronously, the result will be immediately returned to the called. However, when it is executed asynchronously, result will be passed to the resultHandler, which must implement the IERCAgentClient interface. When executed asynchronously, the run method will commit and return a runId that will be used to invoke the resultHandler once the agent execution has completed. This allows tools and agents to be executed off-chain, and to post the result through this callback mechanism once it’s ready. In addition, the run method may also be used to add custom checks or verification logic to the tool.
 
 ### Agent abstract class
 
@@ -277,11 +277,11 @@ abstract contract IERCAgent is IERCAgentTool {
 }
 ```
 
-* agentExecutorContract : A contract that can execute a single iteration of an agent. In many cases, this can be a precompile to optimize for speed of execution, cost and flexibility. 
-* tools : The set of tools the agent can operate with. Can either be a regular smart contract function, or another agent that’s encapsulated in a smart contract. 
-* agentMaxIterations : the maximum number times the agent can use a tool as part of a single execution (ie calling run). This makes sure the agent eventually terminates in case it ever gets lost and doesn’t have a path forward for solving its task.
-* AgentRunResult: an event that helps inspect what the agent actually did in more detail, how it arrived at its final answer, and what (if any) actions it took as part of it. For example, if the agent transferred some token on behalf of you to another user, the executionSteps should have an explicit step about this action, such as Transfer{from: A, to: B, token: X, amount: Y}
-* run : we implement a synchronous agent execution method that relies on the agentExecutorContract precompile to build and run the LLM prompts using the help of a reasoning engine such as Re-Act. The precompile builds the prompt using the agent name, description, tools and user input, and adds reasoning-specific parts as well to the prompt. It then executes the prompt, parses the response and returns it to the agent contract. The response might either be a finalAnswer , meaning that the agent is done with its task, or a tool invocation, which means that the agents wants to execute a tool in order to achieve its overall goal. In addition to the tool and its input, we also return the agent’s reasoning so far, so for the next iteration it can pick up where it left off and figure out what it needs to do next. We do this until the agent arrives at a final answer, or until we exceed the agentMaxIterations, in which case we throw an error.
+- `agentExecutorContract`: A contract that can execute a single iteration of an agent. In many cases, this can be a precompile to optimize for speed of execution, cost and flexibility. 
+- `tools`: The set of tools the agent can operate with. Can either be a regular smart contract function, or another agent that’s encapsulated in a smart contract. 
+- `agentMaxIterations`: the maximum number times the agent can use a tool as part of a single execution (ie calling run). This makes sure the agent eventually terminates in case it ever gets lost and doesn’t have a path forward for solving its task.
+- `AgentRunResult`: an event that helps inspect what the agent actually did in more detail, how it arrived at its final answer, and what (if any) actions it took as part of it. For example, if the agent transferred some token on behalf of you to another user, the executionSteps should have an explicit step about this action, such as Transfer{from: A, to: B, token: X, amount: Y}
+- `run`: we implement a synchronous agent execution method that relies on the agentExecutorContract precompile to build and run the LLM prompts using the help of a reasoning engine such as Re-Act. The precompile builds the prompt using the agent name, description, tools and user input, and adds reasoning-specific parts as well to the prompt. It then executes the prompt, parses the response and returns it to the agent contract. The response might either be a finalAnswer , meaning that the agent is done with its task, or a tool invocation, which means that the agents wants to execute a tool in order to achieve its overall goal. In addition to the tool and its input, we also return the agent’s reasoning so far, so for the next iteration it can pick up where it left off and figure out what it needs to do next. We do this until the agent arrives at a final answer, or until we exceed the `agentMaxIterations`, in which case we throw an error.
 
 ### Agent executor contract
 
@@ -309,8 +309,8 @@ interface IERCAgentExecutor {
 }
 ```
 
-* AgentIterationResult : represents the outcome of one iteration of the agent. Can either be a finalAnswer  which indicates the agent has completed its task, or a tool invocation. finalAnswer is only present when isFinalAnswer is set to true , and the tool invocation fields are only set when isFinalAnswer is false 
-* runNextIteration : executes a single iteration in the agent’s reasoning loop. All the parameters including midelId, agentName, agentDescription, inputDescription, tools must be supplied from the agent contract. agentReasoning should be initially empty, however, after each iteration, clients should append the latest agentReasoning string from the AgentIterationResult returned by the last runNextIteration invocation.
+- `AgentIterationResult`: represents the outcome of one iteration of the agent. Can either be a finalAnswer  which indicates the agent has completed its task, or a tool invocation. finalAnswer is only present when isFinalAnswer is set to true , and the tool invocation fields are only set when isFinalAnswer is false 
+- `runNextIteration`: executes a single iteration in the agent’s reasoning loop. All the parameters including `modelId`, `basePrompt`, `inputDescription`, `tools` must be supplied from the agent contract. agentReasoning should be initially empty, however, after each iteration, clients should append the latest agentReasoning string from the `AgentIterationResult` returned by the last `runNextIteration` invocation.
 
 ### Agent client interface
 
@@ -333,7 +333,7 @@ interface IERCAgentClient is IERC165 {
 }
 ```
 
-* handleAgentResult: called by the agent when the result of the execution with the given runId is available. Clients could expect this callback to be called either as part of the original run call, when the agent run synchronously, or as a separate transaction if the agent is executed asynchronously. 
+- `handleAgentResult`: called by the agent when the result of the execution with the given runId is available. Clients could expect this callback to be called either as part of the original run call, when the agent run synchronously, or as a separate transaction if the agent is executed asynchronously. 
 
 ## Rationale
 
