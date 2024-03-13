@@ -28,6 +28,8 @@ We aim to create a framework where agents can be built in a standardized and int
 
 To demonstrate how this fits together, we can see an example workflow below where a user is trying to apply for a loan. The lending pool requires that the user’s request is first evaluated by the “Loan application agent”. The agent has access to several tools, including a specialized credit score agent, as well as access to the lending pool DAO that sets what criteria should be used to evaluate new applicants. The criteria can be expressed in easy to understand natural language, and can be changed by a DAO proposal any time. The loan application agent uses a reasoning engine to figure out that it first needs to get the latest evaluation criteria from the DAO, and then use the credit score agent to calculate a credit score based on the given evaluation points. Once it receives the score, it either approves or denies based on a hardcoded limit, which could also be customizable. 
 
+![Loan application workflow](assets/loan-app.png)
+
 This example highlights how powerful nested and composable agents are, where each one can be focused on driving a particular well-defined task, and can offload complexities to other, specialized agents in a completely flexible way. 
 
 ### Execution Environment
