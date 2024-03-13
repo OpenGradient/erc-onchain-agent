@@ -42,7 +42,7 @@ We are going to define the specifications going from the bottom up, first showin
 
 ### Tool definition
 
-A IERCAgentTool defines a tool the agent can use to either retrieve information or take an action in its environment. In most cases, the tool can either be implemented by a traditional smart contract, or by another on-chain agent. Since all agents are wrapped in a smart contract (see below), it is very straightforward to also reuse them as tools in other agents, as it is one of the explicit goals of this ERC. 
+A `IERCAgentTool` defines a tool the agent can use to either retrieve information or take an action in its environment. In most cases, the tool can either be implemented by a traditional smart contract, or by another on-chain agent. Since all agents are wrapped in a smart contract (see below), it is very straightforward to also reuse them as tools in other agents, as it is one of the explicit goals of this ERC. 
 
 ```solidity
 pragma solidity ^0.8.4;
@@ -124,7 +124,7 @@ interface IERCAgentTool is IERC165 {
 
 ### Agent abstract class
 
-Next, we define an agent abstract class. An agent is backed by an LLM, and uses a set of tools to operate in its environment. Since agents themselves can also be used as tools in other agents, we make them implement the IERCAgentTool interface.
+Next, we define an agent abstract class. An agent is backed by an LLM, and uses a set of tools to operate in its environment. Since agents themselves can also be used as tools in other agents, we make them implement the `IERCAgentTool` interface.
 
 ```solidity
 pragma solidity ^0.8.4;
@@ -280,7 +280,7 @@ abstract contract IERCAgent is IERCAgentTool {
 - `agentExecutorContract`: A contract that can execute a single iteration of an agent. In many cases, this can be a precompile to optimize for speed of execution, cost and flexibility. 
 - `tools`: The set of tools the agent can operate with. Can either be a regular smart contract function, or another agent that’s encapsulated in a smart contract. 
 - `agentMaxIterations`: the maximum number times the agent can use a tool as part of a single execution (ie calling run). This makes sure the agent eventually terminates in case it ever gets lost and doesn’t have a path forward for solving its task.
-- `AgentRunResult`: an event that helps inspect what the agent actually did in more detail, how it arrived at its final answer, and what (if any) actions it took as part of it. For example, if the agent transferred some token on behalf of you to another user, the executionSteps should have an explicit step about this action, such as Transfer{from: A, to: B, token: X, amount: Y}
+- `AgentRunResult`: an event that helps inspect what the agent actually did in more detail, how it arrived at its final answer, and what (if any) actions it took as part of it. For example, if the agent transferred some token on behalf of you to another user, the executionSteps should have an explicit step about this action, such as `Transfer{from: A, to: B, token: X, amount: Y}`
 - `run`: we implement a synchronous agent execution method that relies on the agentExecutorContract precompile to build and run the LLM prompts using the help of a reasoning engine such as Re-Act. The precompile builds the prompt using the agent name, description, tools and user input, and adds reasoning-specific parts as well to the prompt. It then executes the prompt, parses the response and returns it to the agent contract. The response might either be a finalAnswer , meaning that the agent is done with its task, or a tool invocation, which means that the agents wants to execute a tool in order to achieve its overall goal. In addition to the tool and its input, we also return the agent’s reasoning so far, so for the next iteration it can pick up where it left off and figure out what it needs to do next. We do this until the agent arrives at a final answer, or until we exceed the `agentMaxIterations`, in which case we throw an error.
 
 ### Agent executor contract
@@ -333,7 +333,7 @@ interface IERCAgentClient is IERC165 {
 }
 ```
 
-- `handleAgentResult`: called by the agent when the result of the execution with the given runId is available. Clients could expect this callback to be called either as part of the original run call, when the agent run synchronously, or as a separate transaction if the agent is executed asynchronously. 
+- `handleAgentResult`: called by the agent when the result of the execution with the given `runId` is available. Clients could expect this callback to be called either as part of the original run call, when the agent run synchronously, or as a separate transaction if the agent is executed asynchronously. 
 
 ## Rationale
 
