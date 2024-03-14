@@ -134,12 +134,14 @@ interface IERCAgentTool {
 - `inputDescription`: Describes the format of the input (if any) the tool expects to receive. Agents will use this to generate an input based on the specific task they want to achieve. 
 - `run`: Triggers the execution of an tool with a given input. Tools can either be executed synchronously or asynchronously. When executed synchronously, the result will be immediately returned to the called. However, when it is executed asynchronously, result will be passed to the resultHandler, which must implement the IERCAgentClient interface. When executed asynchronously, the run method will commit and return a runId that will be used to invoke the resultHandler once the agent execution has completed. This allows tools and agents to be executed off-chain, and to post the result through this callback mechanism once it’s ready. In addition, the run method may also be used to add custom checks or verification logic to the tool. It is not possible to determine based on the interface alone whether a tool will run synchronously or asynchronously.
 
-### Synchronous Agent template
+### On-chain Agent abstract class
 
-Next, we define an agent abstract class. An agent is backed by an LLM, and uses a set of tools to operate in its environment. Since agents themselves can also be used as tools in other agents, we make them implement the `IERCAgentTool` interface.
+Next, we define an on-chain (synchronous) agent abstract class. This contract can easily be subclassed to implement a custom agent for any task without having to deal with low-level implementation details. The agent it self runs synchronously using an `agentExecutor` conract, meaning that clients don't have to rely on callbacks to receive its result.
+
+An agent is backed by an LLM, and uses a set of tools to operate in its environment. Since agents themselves can also be used as tools in other agents, we make them implement the `IERCAgentTool` interface.
 
 ```solidity
-/// @notice Implements a synchronous agent that's backed by an on-chain agentExecutor contract
+/// @notice Implements a synchronous agent that's backed by an on-chain agentExecutor 
 abstract contract IERCAgent is IERCAgentTool {
 
     /// @notice Logged when the agent completes an execution triggered by calling run.
