@@ -77,8 +77,11 @@ interface IERCAgentTool {
     
     /// @notice Describes a single parameter of the tool input.
     struct ParamDescription {
+        /// @notice type of the argument
         ParamType paramType;
+        /// @notice name of the argument, to be used by the agent
         string name;
+        /// @notice description of the argument, to be used by the agent
         string description;
     }
     
@@ -129,6 +132,8 @@ interface IERCAgentTool {
 }
 ```
 
+- `InputDescription`: Describes all parameters that the tool expects. The agent might use this metadata to generate the input values for tool use.
+- `ParamDescription`: Describes a single parameter that the tool expects. The agent might use this metadata to generate a value for the specific paramter for tool use.
 - `name`: Gives a meaningful and reasonably unique name to the tool. Agents could use this to decide when it’s appropriate to use this tool. Example could be TokenTransferTool, ViewBalanceTool.
 - `description`: Gives a short description of what the tool does, and when it should be used. Agents could use this description to decide if it’s appropriate to utilize this tool. An example might be: "Transfers tokens from one user to another".
 - `inputDescription`: Describes the format of the input (if any) the tool expects to receive. Agents will use this to generate an input based on the specific task they want to achieve. 
@@ -144,7 +149,7 @@ An agent is backed by an LLM, and uses a set of tools to operate in its environm
 /// @notice Implements a synchronous agent that's backed by an on-chain agentExecutor 
 abstract contract IERCAgent is IERCAgentTool {
 
-    /// @notice Logged when the agent completes an execution triggered by calling run.
+    /// @notice Logged when the agent completes an run.
     /// @param runId the ID of the run
     /// @param executionSteps contains any additional set of details about
     ///   what actions the agent took and how it completed the task, in order. 
@@ -177,7 +182,7 @@ abstract contract IERCAgent is IERCAgentTool {
     /// @param _tools the tools the agent should have access to
     /// @param _agentMaxIterations the maximum number of iterations an agent should take
     ///   when running a particular task. One iteration includes one use of a tool. Use
-    ///   this to put an upper limit on the runtime of the agent in case it gets stuck.
+    ///   this to put an upper limit on the agent execution in case it gets stuck.
     constructor(
         address _agentExecutorContract,
         string memory _modelId,
@@ -194,6 +199,7 @@ abstract contract IERCAgent is IERCAgentTool {
         agentDescription = _description;
         basePrompt = _basePrompt;
         
+        // Create "prompt" input param 
         IERCAgentTool.ParamDescription memory promptParam = 
             IERCAgentTool.ParamDescription(IERCAgentTool.ParamType.STRING, "prompt", _inputDescription);
         IERCAgentTool.ParamDescription[] memory params = 
@@ -206,7 +212,7 @@ abstract contract IERCAgent is IERCAgentTool {
         currentRunId = 0;
     }
     
-    /// @notice Returns the name of this agent, should be short and meaningful. 
+    /// @notice Returns the name of this agent.
     /// @return The name of the agent.
     function name() external view returns (string memory) {
         return agentName;
@@ -220,8 +226,6 @@ abstract contract IERCAgent is IERCAgentTool {
     }
     
     /// @notice Returns the type and rough format of the input the agent expects.
-    ///   Should be a succint description of what clients need to provide when
-    ///   calling this agent.
     /// @return InputDescription of the input this agent.
     function inputDescription() external view returns (IERCAgentTool.InputDescription memory) {
         return agentInputDescription;
