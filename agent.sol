@@ -80,23 +80,7 @@ interface IERCAgentTool {
     function run(Input memory input, address resultHandler) external returns (int256 runId, string memory result);
 }
 
-/// @notice Used to receive the result of asynchronous agent executions
-interface IERCAgentClient {
-   
-    /// @notice Used to pass the result of the agent invocation back to the caller.
-    /// @dev implementations must verify that the sender of this message is the agent
-    ///   that they originally issued the request for
-    /// @param runId the runId that was returned by the run call of agent
-    /// @param result the final answer and result of the requested task from the agent
-    function handleAgentResult(int256 runId, string memory result) external;
-    
-    /// @notice check supported interfaces, adhereing to ERC165.
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
-}
-
-
 /// ========= SYNCHRONOUS AGENT IMPLEMENTATION ==========
-
 
 /// @notice Implements a synchronous agent that's backed by an on-chain agentExecutor contract
 abstract contract IERCAgent is IERCAgentTool {
@@ -247,6 +231,22 @@ abstract contract IERCAgent is IERCAgentTool {
         revert("Agent failed to produce final answer within agentMaxIterations");
     }
 }
+
+
+/// @notice Used to receive the result of asynchronous agent executions
+interface IERCAgentClient {
+   
+    /// @notice Used to pass the result of the agent invocation back to the caller.
+    /// @dev implementations must verify that the sender of this message is the agent
+    ///   that they originally issued the request for
+    /// @param runId the runId that was returned by the run call of agent
+    /// @param result the final answer and result of the requested task from the agent
+    function handleAgentResult(int256 runId, string memory result) external;
+    
+    /// @notice check supported interfaces, adhereing to ERC165.
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
+}
+
 
 /// @notice represents the result of a single iteration of the agent reasoning loop
 struct AgentIterationResult {

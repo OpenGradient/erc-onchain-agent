@@ -4,11 +4,11 @@ Depends on https://eips.ethereum.org/EIPS/eip-165
 
 ## Simple Summary
 
-A standard interface and execution framework for interoperable on-chain agents (backed by large language models) and tools that can be nested and combined in unlimited ways to create powerful autonomous entities on Ethereum. 
+A standardized interface and execution framework for interoperable on-chain agents (backed by large language models) and tools that can be nested and combined in unbounded ways to create powerful autonomous entities on Ethereum. 
 
 ## Abstract
 
-This ERC proposes the introduction of on-chain interoperable agents, a novel development in the field of decentralized artificial intelligence. Leveraging the capabilities of Large Language Models (LLMs), on-chain agents merge advanced language understanding and intelligence with blockchain technology, offering verifiability, transparency, and accessibility to a myriad of AI applications. These agents, encapsulated within smart contracts on the Ethereum blockchain, can autonomously execute complex tasks, from managing decentralized autonomous organization (DAO) operations to making high-stakes financial decisions. When we let agents interact with each other in a standardized way, we can create a network of autonomous actors that can utilize each other based on needs and specializations, creating a thriving ecosystem. 
+This ERC proposes the introduction of on-chain interoperable agents, a novel development in the field of decentralized artificial intelligence. Building on the capabilities of Large Language Models (LLMs), on-chain agents merge advanced language understanding and intelligence with blockchain technology, offering verifiability, transparency, and accessibility to a wide range of AI applications. These agents, encapsulated within smart contracts on the Ethereum blockchain, can autonomously execute complex tasks, from managing decentralized autonomous organization (DAO) operations to making high-stakes financial decisions. When we let agents interact with each other in a standardized way, we can create a network of autonomous actors that can utilize each other based on needs and specializations, creating a thriving ecosystem. 
 
 In addition, we also introduce the concept of on-chain tools. Tools allow agents to execute specific tasks in their environment - agents can reason about what tools they need to use and in what way, in order to achieve their overall goal. These tools are designed such that they are easy to reuse between different agents, they can either be backed by other agents deployed, or regular smart contracts. 
 
