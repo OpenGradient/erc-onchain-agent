@@ -299,24 +299,42 @@ abstract contract IERCAgent is IERCAgentTool {
 - `AgentRunResult`: an event that helps inspect what the agent actually did in more detail, how it arrived at its final answer, and what (if any) actions it took as part of it. For example, if the agent transferred some token on behalf of you to another user, the executionSteps should have an explicit step about this action, such as `Transfer{from: A, to: B, token: X, amount: Y}`
 - `run`: we implement a synchronous agent execution method that relies on the `agentExecutorContract` to build and run the LLM prompts using the help of a reasoning engine such as Re-Act. The precompile builds the prompt using the agent name, description, tools and user input, and adds reasoning-specific parts as well to the prompt. It then executes the prompt, parses the response and returns it to the agent contract. The response might either be a finalAnswer, meaning that the agent is done with its task, or a tool invocation, which means that the agents wants to execute a tool in order to achieve its overall goal. In addition to the tool and its input, we also return the agent’s reasoning so far, so for the next iteration it can pick up where it left off and figure out what it needs to do next. We do this until the agent arrives at a final answer, or until we exceed the `agentMaxIterations`, in which case we throw an error.
 
-### Agent executor contract
+### Agent executor interface
+
+Next, we define an interface for running a single iteration of an `IERCAgent`. Note that a single call to `run` on an agent might result in 1 more more iterations, as the agent might decidet to use multiple tools to achieve its task. 
+
+A call to this executor will return what the agent thinks should do next, whether it's using another tool, or returning a final answer.
 
 ```solidity
 /// @notice represents the result of a single iteration of the agent reasoning loop
 struct AgentIterationResult {
-   bool isFinalAnswer;
+
+    /// @notice true if the agent has completed its task and arrived at a final answer
+    bool isFinalAnswer;
    
-   string finalAnswer; // only present when isFinalAnswer == true
+    /// @notice the agents final answer to its given task, only present when 
+    ///   isFinalAnswer is true.
+    string finalAnswer; 
    
-   // below are only present when isFinalAnswer == false
-   IERCAgentTool tool;
-   IERCAgentTool.Input toolInput;
-   string agentReasoning;
+    /// @notice the tool the agent wants to use, only present when isFinalAnswer is false
+    IERCAgentTool tool;
+    /// @notice the input for the selected tool, only present when isFinalAnswer is false
+    IERCAgentTool.Input toolInput;
+    /// @notice the agent's reasoning for why it selected the tool and its input,
+    ///   only present when isFinalAnswer is false
+    string agentReasoning;
 }
 
-// can be implemented as a precompile
+/// can be implemented as a precompile
 interface IERCAgentExecutor {
 
+    /// @notice Executes a single iteration of the agent's reasoning loop
+    /// @param modelId the LLM model to be used for running the agent
+    /// @param basePrompt the high-level description of what the agent should be aiming
+    ///   for when given a task. Will be passed to the LLM.
+    /// @param tools list of tools the agent can use
+    /// @param agentReasoning list of all reasoning pieces returned in `AgentIterationResult` 
+    ///   by earlier calls to this method within the same run.
     function runNextIteration(
         string memory modelId,
         string memory basePrompt,
@@ -329,7 +347,9 @@ interface IERCAgentExecutor {
 - `AgentIterationResult`: represents the outcome of one iteration of the agent. Can either be a finalAnswer  which indicates the agent has completed its task, or a tool invocation. finalAnswer is only present when isFinalAnswer is set to true , and the tool invocation fields are only set when isFinalAnswer is false 
 - `runNextIteration`: executes a single iteration in the agent’s reasoning loop. All the parameters including `modelId`, `basePrompt`, `inputDescription`, `tools` must be supplied from the agent contract. agentReasoning should be initially empty, however, after each iteration, clients should append the latest agentReasoning string from the `AgentIterationResult` returned by the last `runNextIteration` invocation.
 
-### Agent client interface
+### Asynchronous Agent client interface
+
+Finally, for asynchronous execution, we define a callback interface that receives the final result of an agent executed off-chain.
 
 ```solidity
 /// @notice Used to receive the result of asynchronous agent executions
