@@ -231,15 +231,11 @@ abstract contract IERCAgent is IERCAgentTool {
         return agentInputDescription;
     }
     
-    /// @notice Runs the agent with the given input and returns its final answer
-    ///   to the given task.
+    /// @notice Runs the agent with the given input synchronously.
     /// @param input The input to this agent that is generated using the inputDescription.
-    /// @param resultHandler The contract that will receive the result of this agent execution,
-    ///   must support the IERCAgentClient interface. 
-    /// @return runId for this request that will be used when providing the result
-    ///   through the client interface.
-    /// @return result, only present when the tool was executed synchronously and runId is -1.
-    ///   Do not use unless the runId returned was -1. 
+    /// @param resultHandler unused, only synchronous executon is supported.
+    /// @return runId will be -1, only synchronous execution is supported.
+    /// @return result of the agent invocation
     function run(IERCAgentTool.Input memory input, address resultHandler) external virtual returns (int256, string memory) {
         require(input.params.length == 1, "Agent always expects a single parameter");
 
@@ -297,6 +293,7 @@ abstract contract IERCAgent is IERCAgentTool {
 ```
 
 - `agentExecutorContract`: A contract that can execute a single iteration of an agent. In many cases, this can be a precompile to optimize for speed of execution, cost and flexibility. 
+- `name`, `description`, `inputDescription`: see `IERCAgentTool`.
 - `tools`: The set of tools the agent can operate with. Can either be a regular smart contract function, or another agent that’s encapsulated in a smart contract. 
 - `agentMaxIterations`: the maximum number times the agent can use a tool as part of a single execution (ie calling run). This makes sure the agent eventually terminates in case it ever gets lost and doesn’t have a path forward for solving its task.
 - `AgentRunResult`: an event that helps inspect what the agent actually did in more detail, how it arrived at its final answer, and what (if any) actions it took as part of it. For example, if the agent transferred some token on behalf of you to another user, the executionSteps should have an explicit step about this action, such as `Transfer{from: A, to: B, token: X, amount: Y}`
