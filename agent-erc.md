@@ -5,6 +5,7 @@ TODO:
 - clean up references
 - handle tool output reasoning formatting
 - double check risks
+- add agent execution diagram
 
 ## Simple Summary
 
@@ -390,13 +391,13 @@ interface IERCAgentClient {
 
 ## Rationale
 
-The standard is intended to establish an interface and execution framework for agents that can freely interact and build on each other. Similar to how classes expose interfaces for other classes to use in object-oriented programming, agents should be able to communicate and share their capabilities and the type of input they expect from consumers. The primary difference is that for agents, everything is expressed as a natural language string. Agents that want to utilize existing agents deployed to the network can use reasoning frameworks such as chain-of-thought or Re-Act to use “tools” to solve their tasks. These tools could be smart contracts or other agents. When used from a reasoning framework, the name, description and input description serves as direct guidance for the parent agents to decide when it’s appropriate to use a tool. 
+The standard is intended to establish an interface and execution framework for agents that can freely interact and build on each other. Similar to how classes expose interfaces for other classes to use in object-oriented programming, agents should be able to communicate and share their capabilities and the type of input they expect from consumers. The primary difference is that for agents, everything is expressed as a natural language string. Agents that want to utilize existing agents deployed to the network can use reasoning frameworks such as chain-of-thought or Re-Act to use “tools” to solve their tasks. These tools could be smart contracts or other agents. When used from a reasoning framework, the name, description and input description serves as direct guidance for the parent agents to decide when it’s appropriate to use a tool. Clients who are using these agents directly, and not through other agents do not have to utilize the additional metadata (name, description, input description), but they can still use them as a source of documentation for what the agent is intended for and how it should be used. These clients still benefit from the flexible execution environment laid out in this ERC.
 
-Clients who are using these agents directly, and not through other agents do not have to utilize these additional metadata functions (name, description, input description), but they can still use them as a source of documentation for what the agent is intended for and how it should be used. These clients still benefit from the flexible execution environment laid out in this ERC.
+In order to allow both fully on-chain, and off-chain agent execution environments, we introduced the `IERCAgentClient` which allows for asynchronous execution with a callback. We want to provide as much flexibility for both current and future agent implementations as possible. Both on-chain and off-chain AI and ML inference solutions are being built in the community, so it is important to remain open to a wide range of solutions. In our reference, we provide a synchronous, on-chain agent executor precompile that could be used to run agents seamlessly in a single transaction. However, off-chain or asynchronous executors might be more appropriate for existing technologies that exist. We expect that specialized rollups or networks will make it more feasible to execute agents on-chain. 
 
-The `IERCAgentClient` interface allows for various agent execution implementations, whether it’s on-chain, off-chain, synchronous or asynchronous, we want to provide as much flexibility for both current and future implementations as possible. Both on-chain and off-chain AI and ML inference solutions are being built in the community, so we want to remain open to a wide range of solutions. In our reference, we provide a synchronous, on-chain agent executor precompile that could be used to run agents seamlessly in a single transaction. However, off-chain or asynchronous executors might be more appropriate for existing technologies that exist. We expect that specialized rollups or networks will make it more feasible to execute agents on-chain. 
+Through the use of the `IERCAgentTool` interface, we can us turn almost any smart contract into a tool for an agent to use. Human-readable descriptions have to be provided for each tool and parameter so LLMs know when to use them. To showcase the strenghts of this interface, we later provide an example implementation of a simple wrapper tool `SimpleSmartContractTool` that can wrap any smart contract and expose it to agents.
 
-Through the use of the `IERCAgentTool` interface, we can us turn almost any smart contract into a tool for an agent to use. Human-readable descriptions have to be provided for each tool and parameter so LLMs know when to use them. 
+In this proposal, we also showed how a fully on-chain agent might be structured (`IERCAgent`). This agent depends on an `agentExecutorContract` that actually executes the LLM prompts. In the reference section, we provide a precompile that implements this interface. Finally, to showcase how straightforward it is to build your custom agent using this framework, we construct a `WalletAgent` further down.
 
 ## References
 
@@ -671,8 +672,6 @@ As mentioned in the previous point, upgradeability of agents could pose signific
 ### Gas Limit and Cost Estimation
 
 Given that on-chain execution can consume gas, it's crucial to consider the gas cost associated with running on-chain agents. Provide users with an estimate of the gas required for typical operations and suggest precautions to prevent out-of-gas errors. 
-
-MENTION CALLBACK GAS ESTIMATION
 
 ## Copyright Waiver
 
