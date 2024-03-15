@@ -1,9 +1,7 @@
 # ERC Proposal: Interoperable On-chain Agents Standard
 
 TODO:
-- finish rationale
 - clean up references
-- handle tool output reasoning formatting
 - double check risks
 - add agent execution diagram
 
@@ -245,7 +243,10 @@ abstract contract IERCAgent is IERCAgentTool {
         require(input.params.length == 1, "Agent always expects a single parameter");
 
         IERCAgentExecutor agentExecutor = IERCAgentExecutor(agentExecutorContract);
+
         string[] memory agentReasoning = new string[](agentMaxIterations);
+        string[] memory toolResults = new string[](agentMaxIterations);
+
         (string memory prompt) = abi.decode(input.params[0].value, (string));
 
         currentRunId++;
@@ -257,6 +258,7 @@ abstract contract IERCAgent is IERCAgentTool {
                 basePrompt,
                 tools,
                 agentReasoning,
+                toolResults,
                 prompt
             );
             
@@ -281,14 +283,12 @@ abstract contract IERCAgent is IERCAgentTool {
                     IERCAgentTool.run.selector, iterationResult.toolInput.abiEncodedParams));
                 require(success, "Tool call failed");
 
-                (int256 runId, string memory result) = abi.decode(returnValue, (int256, string));
+                (int256 runId, string memory result) = abi.decode(
+                    returnValue, (int256, string));
                 require(runId == -1, "Only synchronous tools supported");
                 
-                agentReasoning[currentIteration] = string.concat(
-                    iterationResult.agentReasoning,
-                    "Observation: ",
-                    result,
-                    "\n");
+                agentReasoning[currentIteration] = iterationResult.agentReasoning;
+                toolResults[currentIteration] = result;
             }
         }
         
@@ -340,6 +340,8 @@ interface IERCAgentExecutor {
     /// @param tools list of tools the agent can use
     /// @param agentReasoning list of all reasoning pieces returned in `AgentIterationResult` 
     ///   by earlier calls to this method within the same run.
+    /// @param toolResults stringified results of every tool invocation requested by 
+    ///   the agent. Must match up with the order of invocations.
     /// @param prompt the input for this specific agent invocation, eg a query 
     ///   submitted by the user
     function runNextIteration(
@@ -347,12 +349,13 @@ interface IERCAgentExecutor {
         string memory basePrompt,
         IERCAgentTool[] memory tools,
         string[] memory agentReasoning,
+        string[] memory toolResults,
         string memory prompt) external returns (AgentIterationResult memory);
 }
 ```
 
 - `AgentIterationResult`: represents the outcome of one iteration of the agent. Can either be a finalAnswer  which indicates the agent has completed its task, or a tool invocation, which means that the agent wants to use the given tool with the given input. finalAnswer is only present when isFinalAnswer is set to true , and the tool invocation fields are only set when isFinalAnswer is false 
-- `runNextIteration`: executes a single iteration in the agent’s reasoning loop. All the parameters including `modelId`, `basePrompt`, `tools` must be supplied from the agent contract. agentReasoning should be initially empty, however, after each iteration, clients should append the latest agentReasoning string from the `AgentIterationResult` returned by the last `runNextIteration` invocation. `runNextIteration` may be called until `isFinalAnswer` is set to `true` in the return value, at which point the agent has finished its task.
+- `runNextIteration`: executes a single iteration in the agent’s reasoning loop. All the parameters including `modelId`, `basePrompt`, `tools` must be supplied from the agent contract. agentReasoning should be initially empty, however, after each iteration, clients should append the latest agentReasoning string from the `AgentIterationResult` returned by the last `runNextIteration` invocation. In addition, the output of every tool invocation must be appended to the `toolResults` parameter. `runNextIteration` may be called until `isFinalAnswer` is set to `true` in the return value, at which point the agent has finished its task.
 
 To see how this method might be used to run an agent with a given task end-to-end, we provide a pseudocode below for a hypothetical client. Also see `IERCAgent.run` for full implementation.
 
@@ -361,13 +364,20 @@ def runAgent(agent, agentExecutor, userInput):
     agentReasoning = []
     while True:
         iterationResult = agentExecutor.runNextIteration(
-            agent.modelId, agent.basePrompt, agent.tools, agentReasoning, userInput)
+            agent.modelId,
+            agent.basePrompt,
+            agent.tools,
+            agentReasoning,
+            toolResults,
+            userInput)
+
         if iterationResult.isFinalAnswer:
             return iterationResult.finalAnswer
         
         toolOutput = iterationResult.tool.call(iterationResult.toolInput)
+
         agentReasoning.append(iterationResult.agentReasoning)
-        agentReasoning.append(toolOutput)
+        toolResults.append(toolOutput)
 ```
 
 ### Asynchronous Agent client interface
@@ -406,7 +416,7 @@ In this proposal, we also showed how a fully on-chain agent might be structured 
 We provide pseudocode for agent executor precompile that uses the Re-Act framework for reasoning.
 
 ```python
-def runNextIteration(modelId, basePrompt, tools, agentReasoning, prompt):
+def runNextIteration(modelId, basePrompt, tools, agentReasoning, toolResults, prompt):
     llm = modelRegistry.get(modelId)
     reasoningEngine = reasoningRegistry.get(Engines.RE_ACT)
 
@@ -417,7 +427,8 @@ def runNextIteration(modelId, basePrompt, tools, agentReasoning, prompt):
     } for tool in tools]
     toolsByName = {tool.name: tool for tool in toolsMetadata}
     
-    llmPrompt = reasoningEngine.buildPrompt(basePrompt, toolsMetadata, agentReasoning, prompt)
+    llmPrompt = reasoningEngine.buildPrompt(
+        basePrompt, toolsMetadata, agentReasoning, toolResults, prompt)
     llmOutput = llm.run(llmPrompt)
     nextStep = reasoningEngine.parse(llmOutput)
     
