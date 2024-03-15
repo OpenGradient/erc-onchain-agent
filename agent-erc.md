@@ -349,7 +349,7 @@ interface IERCAgentExecutor {
 - `AgentIterationResult`: represents the outcome of one iteration of the agent. Can either be a finalAnswer  which indicates the agent has completed its task, or a tool invocation, which means that the agent wants to use the given tool with the given input. finalAnswer is only present when isFinalAnswer is set to true , and the tool invocation fields are only set when isFinalAnswer is false 
 - `runNextIteration`: executes a single iteration in the agent’s reasoning loop. All the parameters including `modelId`, `basePrompt`, `tools` must be supplied from the agent contract. agentReasoning should be initially empty, however, after each iteration, clients should append the latest agentReasoning string from the `AgentIterationResult` returned by the last `runNextIteration` invocation. `runNextIteration` may be called until `isFinalAnswer` is set to `true` in the return value, at which point the agent has finished its task.
 
-To see how this method might be used to run an agent with a given task end-to-end, we provide a pseudocode below for a hypothetical client.
+To see how this method might be used to run an agent with a given task end-to-end, we provide a pseudocode below for a hypothetical client. Also see `IERCAgent.run` for full implementation.
 
 ```python
 def runAgent(agent, agentExecutor, userInput):
@@ -379,9 +379,6 @@ interface IERCAgentClient {
     /// @param runId the runId that was returned by the run call of agent
     /// @param result the final answer and result of the requested task from the agent
     function handleAgentResult(int256 runId, string memory result) external;
-    
-    /// @notice check supported interfaces, adhereing to ERC165.
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }
 ```
 
