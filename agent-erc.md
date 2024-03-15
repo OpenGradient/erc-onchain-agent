@@ -483,7 +483,7 @@ Final Answer: the final answer to the original input question
 Begin!
 
 Question: {{input}}
-{{agentReasoning}}
+{{agentReasoning + toolResults}}
 Thought:
 ```
 
