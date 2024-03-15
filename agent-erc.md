@@ -683,7 +683,7 @@ As mentioned in the previous point, upgradeability of agents could pose signific
 
 ### Gas Limit and Cost Estimation
 
-Simulating an agent's execution is generally not feasible, since it depends on unpredictable output from LLMs. Therefore, traditional gas and cost estimation methods will fail to accurately predict how much gas will be needed to run an agent with a given prompt. One alternative is to manually pick an upper bound for the amount of gas the user is willing to pay based on the complexity of the task, or use alternative "billing" mechanisms for executing agents.
+Simulating an agent's execution is generally not feasible, since it depends on unpredictable output from LLMs. Therefore, traditional gas and cost estimation methods will fail to accurately predict how much gas will be needed to run an agent with a given prompt. One alternative is to manually pick an upper bound for the amount of gas the user is willing to pay based on the complexity of the task, or use alternative "billing" mechanisms for executing agents through the use of paymasters or custom protocols.
 
 ## Copyright Waiver
 
