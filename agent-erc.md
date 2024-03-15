@@ -1,9 +1,8 @@
 # ERC Proposal: Interoperable On-chain Agents Standard
 
 TODO:
-- clean up references
-- double check risks
-- add agent execution diagram
+- Expand on risks
+- Add agent execution diagram
 
 ## Simple Summary
 
@@ -413,7 +412,7 @@ In this proposal, we also showed how a fully on-chain agent might be structured 
 
 ### Agent executor precompile 
 
-We provide pseudocode for agent executor precompile that uses the Re-Act framework for reasoning.
+We provide pseudocode for agent executor precompile that uses the Re-Act framework for reasoning. We also show how a rendered LLM prompt with this framework might look like.
 
 ```python
 def runNextIteration(modelId, basePrompt, tools, agentReasoning, toolResults, prompt):
@@ -575,7 +574,7 @@ contract SimpleSmartContractTool is IERCAgentTool {
 }
 ```
 
-### Demo agent 
+### Wallet agent 
 
 Below is the implementation of an actual agent that could be responsible for managing a user’s deposits in a liquidity pool contract, and taking action based on the user’s natural language instructions.
 
