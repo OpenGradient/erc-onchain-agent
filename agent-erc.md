@@ -1,9 +1,5 @@
 # ERC Proposal: Interoperable On-chain Agents Standard
 
-TODO:
-- Expand on risks
-- Add agent execution diagram
-
 ## Simple Summary
 
 A standardized interface and execution framework for interoperable on-chain agents (backed by large language models) and tools that can be nested and combined in unbounded ways to create powerful autonomous entities on Ethereum. 
