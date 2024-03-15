@@ -303,7 +303,7 @@ abstract contract IERCAgent is IERCAgentTool {
 
 Next, we define an interface for running a single iteration of an `IERCAgent`. Note that a single call to `run` on an agent might result in 1 more more iterations, as the agent might decidet to use multiple tools to achieve its task. 
 
-A call to this executor will return what the agent thinks should do next, whether it's using another tool, or returning a final answer.
+A call to this executor will return what the agent thinks should do next, whether it's using another tool, or returning a final answer. We provide a precompile implementation of this interface later.
 
 ```solidity
 /// @notice represents the result of a single iteration of the agent reasoning loop
@@ -335,6 +335,8 @@ interface IERCAgentExecutor {
     /// @param tools list of tools the agent can use
     /// @param agentReasoning list of all reasoning pieces returned in `AgentIterationResult` 
     ///   by earlier calls to this method within the same run.
+    /// @param prompt the input for this specific agent invocation, eg a query 
+    ///   submitted by the user
     function runNextIteration(
         string memory modelId,
         string memory basePrompt,
@@ -344,8 +346,24 @@ interface IERCAgentExecutor {
 }
 ```
 
-- `AgentIterationResult`: represents the outcome of one iteration of the agent. Can either be a finalAnswer  which indicates the agent has completed its task, or a tool invocation. finalAnswer is only present when isFinalAnswer is set to true , and the tool invocation fields are only set when isFinalAnswer is false 
-- `runNextIteration`: executes a single iteration in the agent’s reasoning loop. All the parameters including `modelId`, `basePrompt`, `inputDescription`, `tools` must be supplied from the agent contract. agentReasoning should be initially empty, however, after each iteration, clients should append the latest agentReasoning string from the `AgentIterationResult` returned by the last `runNextIteration` invocation.
+- `AgentIterationResult`: represents the outcome of one iteration of the agent. Can either be a finalAnswer  which indicates the agent has completed its task, or a tool invocation, which means that the agent wants to use the given tool with the given input. finalAnswer is only present when isFinalAnswer is set to true , and the tool invocation fields are only set when isFinalAnswer is false 
+- `runNextIteration`: executes a single iteration in the agent’s reasoning loop. All the parameters including `modelId`, `basePrompt`, `tools` must be supplied from the agent contract. agentReasoning should be initially empty, however, after each iteration, clients should append the latest agentReasoning string from the `AgentIterationResult` returned by the last `runNextIteration` invocation. `runNextIteration` may be called until `isFinalAnswer` is set to `true` in the return value, at which point the agent has finished its task.
+
+To see how this method might be used to run an agent with a given task end-to-end, we provide a pseudocode below for a hypothetical client.
+
+```python
+def runAgent(agent, agentExecutor, userInput):
+    agentReasoning = []
+    while True:
+        iterationResult = agentExecutor.runNextIteration(
+            agent.modelId, agent.basePrompt, agent.tools, agentReasoning, userInput)
+        if iterationResult.isFinalAnswer:
+            return iterationResult.finalAnswer
+        
+        toolOutput = iterationResult.tool.call(iterationResult.toolInput)
+        agentReasoning.append(iterationResult.agentReasoning)
+        agentReasoning.append(toolOutput)
+```
 
 ### Asynchronous Agent client interface
 
