@@ -1,6 +1,9 @@
 # ERC Proposal: Interoperable On-chain Agents Standard
 
-Depends on https://eips.ethereum.org/EIPS/eip-165
+TODO:
+- finish rationale
+- clean up references
+- handle tool output reasoning formatting
 
 ## Simple Summary
 
