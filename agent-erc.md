@@ -444,8 +444,7 @@ In this case, the reasoning engine is Re-Act, which is essentially just a very s
 You can see how such a prompt might look like below.
 
 ```
-You are a helpful assistant deployed to a blockchain , helping a user manage his/her 
-on-chain wallet that contains various tokens.
+You are a helpful assistant deployed to a blockchain , helping a user manage his/her on-chain wallet that contains various tokens.
 
 Answer the user's questions as best you can. 
 
@@ -467,8 +466,8 @@ Final Answer: the final answer to the original input question
 
 Begin!
 
-Question: {input}
-{agentReasoning}
+Question: {{input}}
+{{agentReasoning}}
 Thought:
 ```
 
