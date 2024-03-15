@@ -574,6 +574,7 @@ contract SimpleSmartContractTool is IERCAgentTool {
 
 Below is the implementation of an actual agent that could be responsible for managing a user’s deposits in a liquidity pool contract, and taking action based on the user’s natural language instructions.
 
+
 ```solidity
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -614,7 +615,7 @@ contract WalletAgent is IERCAgent {
         deployParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to deposit");
         deployParams[1] = ParamDescription(ParamType.INT, "amount", "amount of tokens to deposit");
         tools[0] = new SimpleSmartContractTool(
-            "Deploy",
+            "DeployTool",
             "Deploy funds into the pool",
             address(0x123),
             Pool.deploy.selector,
@@ -627,7 +628,7 @@ contract WalletAgent is IERCAgent {
         withdrawParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to withdraw");
         withdrawParams[1] = ParamDescription(ParamType.INT, "amount", "amount of tokens to withdraw");
         tools[1] = new SimpleSmartContractTool(
-            "Withdraw",
+            "WithdrawTool",
             "Withdraw funds from the pool",
             address(0x123),
             Pool.withdraw.selector,
@@ -639,7 +640,7 @@ contract WalletAgent is IERCAgent {
         ParamDescription[] memory viewBalanceParams = new ParamDescription[](1);
         viewBalanceParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to view balance for");
         tools[2] = new SimpleSmartContractTool(
-            "ViewBalance",
+            "ViewBalanceTool",
             "See user's balance in the pool",
             address(0x123),
             Pool.balance.selector,
@@ -654,6 +655,9 @@ contract WalletAgent is IERCAgent {
 }
 ```
 
+Below, you can see how a simple task of depositing 10 ETH into the pool might be handled by the agent. This task is simple, so only a single tool invocation is required.
+
+![Agent execution](assets/agent-flow.png)
 
 ## Security Considerations
 
