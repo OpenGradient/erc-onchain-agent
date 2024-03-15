@@ -392,11 +392,11 @@ Clients who are using these agents directly, and not through other agents do not
 
 The `IERCAgentClient` interface allows for various agent execution implementations, whether it’s on-chain, off-chain, synchronous or asynchronous, we want to provide as much flexibility for both current and future implementations as possible. Both on-chain and off-chain AI and ML inference solutions are being built in the community, so we want to remain open to a wide range of solutions. In our reference, we provide a synchronous, on-chain agent executor precompile that could be used to run agents seamlessly in a single transaction. However, off-chain or asynchronous executors might be more appropriate for existing technologies that exist. We expect that specialized rollups or networks will make it more feasible to execute agents on-chain. 
 
-Through the use of the `IERCAgentTool` interface, we can us turn almost any smart contract into a tool for an agent to use. Human-readable descriptions have to be provided for each tool and parameter so LLMs know when to use them. In addition, we also 
+Through the use of the `IERCAgentTool` interface, we can us turn almost any smart contract into a tool for an agent to use. Human-readable descriptions have to be provided for each tool and parameter so LLMs know when to use them. 
 
 ## References
 
-### Agent executor precompile
+### Agent executor precompile 
 
 We provide pseudocode for agent executor precompile that uses the Re-Act framework for reasoning.
 
@@ -441,18 +441,24 @@ def runNextIteration(modelId, basePrompt, tools, agentReasoning, prompt):
 ```
 
 In this case, the reasoning engine is Re-Act, which is essentially just a very specific prompt format that makes the LLM work better for step by step thinking and reasoning.
+You can see how such a prompt might look like below.
 
 ```
-Answer the following questions as best you can. 
+You are a helpful assistant deployed to a blockchain , helping a user manage his/her 
+on-chain wallet that contains various tokens.
+
+Answer the user's questions as best you can. 
+
 You have access to the following tools:
 - TransferTokenTool: Sends tokens from ...
 - ExchangeTokenTool: Swaps tokens from ...
+- ViewTokensTool: Returns all tokens owned by the user, ...
 
 Use the following format:
 
 Question: the input question you must answer
 Thought: you should always think about what to do
-Action: the action to take, should be one of [TransferTokenTool, ExchangeTokenTool]
+Action: the action to take, should be one of [TransferTokenTool, ExchangeTokenTool, ViewTokenstool]
 Action Input: the input to the action
 Observation: the result of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
@@ -462,7 +468,8 @@ Final Answer: the final answer to the original input question
 Begin!
 
 Question: {input}
-Thought:{agent_scratchpad}
+{agentReasoning}
+Thought:
 ```
 
 ### Smart-contract backed tool
