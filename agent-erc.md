@@ -4,6 +4,7 @@ TODO:
 - finish rationale
 - clean up references
 - handle tool output reasoning formatting
+- double check risks
 
 ## Simple Summary
 
