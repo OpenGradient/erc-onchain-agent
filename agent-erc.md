@@ -386,13 +386,84 @@ interface IERCAgentClient {
 
 ## Rationale
 
-The standard is intended to establish an interface and execution framework for agents that can freely interact and build on each other in a standardized way. Similar to how classes expose interfaces for other classes to use in object-oriented programming, agents should be able to communicate and share their capabilities and the type of input they expect from consumers. The primary difference is that for agents, everything is expressed as a natural language string. Agents that want to utilize existing agents deployed to the network can use reasoning frameworks such as chain-of-thought or Re-Act to use “tools” to solve their tasks. These tools could be smart contracts or other agents. When used from a reasoning framework, the name, description and input description serves as direct guidance for the parent agents to decide when it’s appropriate to use it. 
+The standard is intended to establish an interface and execution framework for agents that can freely interact and build on each other. Similar to how classes expose interfaces for other classes to use in object-oriented programming, agents should be able to communicate and share their capabilities and the type of input they expect from consumers. The primary difference is that for agents, everything is expressed as a natural language string. Agents that want to utilize existing agents deployed to the network can use reasoning frameworks such as chain-of-thought or Re-Act to use “tools” to solve their tasks. These tools could be smart contracts or other agents. When used from a reasoning framework, the name, description and input description serves as direct guidance for the parent agents to decide when it’s appropriate to use a tool. 
 
 Clients who are using these agents directly, and not through other agents do not have to utilize these additional metadata functions (name, description, input description), but they can still use them as a source of documentation for what the agent is intended for and how it should be used. These clients still benefit from the flexible execution environment laid out in this ERC.
 
 The `IERCAgentClient` interface allows for various agent execution implementations, whether it’s on-chain, off-chain, synchronous or asynchronous, we want to provide as much flexibility for both current and future implementations as possible. Both on-chain and off-chain AI and ML inference solutions are being built in the community, so we want to remain open to a wide range of solutions. In our reference, we provide a synchronous, on-chain agent executor precompile that could be used to run agents seamlessly in a single transaction. However, off-chain or asynchronous executors might be more appropriate for existing technologies that exist. We expect that specialized rollups or networks will make it more feasible to execute agents on-chain. 
 
+Through the use of the `IERCAgentTool` interface, we can us turn almost any smart contract into a tool for an agent to use. Human-readable descriptions have to be provided for each tool and parameter so LLMs know when to use them. In addition, we also 
+
 ## References
+
+### Agent executor precompile
+
+We provide pseudocode for agent executor precompile that uses the Re-Act framework for reasoning.
+
+```python
+def runNextIteration(modelId, basePrompt, tools, agentReasoning, prompt):
+    llm = modelRegistry.get(modelId)
+    reasoningEngine = reasoningRegistry.get(Engines.RE_ACT)
+
+    toolsMetadata = [{
+        'name': tool.name(), 
+        'description': tool.description(),
+        'inputDescription': tool.inputDescription()
+    } for tool in tools]
+    toolsByName = {tool.name: tool for tool in toolsMetadata}
+    
+    llmPrompt = reasoningEngine.buildPrompt(basePrompt, toolsMetadata, agentReasoning, prompt)
+    llmOutput = llm.run(llmPrompt)
+    nextStep = reasoningEngine.parse(llmOutput)
+    
+    if nextStep.isDone():
+        return AgentIterationResult(isFinalAnswer=True, finalAnswer=nextStep.answer)
+    
+    tool = toolsByName.get(nextStep.toolName)
+    toolInputByName = {input.name: input for input in tool.inputDescription.paramDescriptions}
+    
+    params = json.parse(nextStep.params)
+    parsedParams = {}
+
+    for param in params.array():
+        paramDescription = toolInputByName[param.name]
+        parsedParams[param.name] = IERCAgentTool.ParamValue(
+            type=paramDescription.type,
+            value=abi.encode(param.value, paramDescription.type))
+
+    abiEncodedParams = abi.encode([params.value for params in parsedParams])
+    
+    return AgentIterationResult(
+        isFinalAnswer=False,
+        tool=tool,
+        toolInput=IERCAgentTool.Input(params=parsedParams, abiEncodedParams=abiEncodedParams),
+        agentReasoning=nextStep.reasoning)
+```
+
+In this case, the reasoning engine is Re-Act, which is essentially just a very specific prompt format that makes the LLM work better for step by step thinking and reasoning.
+
+```
+Answer the following questions as best you can. 
+You have access to the following tools:
+- TransferTokenTool: Sends tokens from ...
+- ExchangeTokenTool: Swaps tokens from ...
+
+Use the following format:
+
+Question: the input question you must answer
+Thought: you should always think about what to do
+Action: the action to take, should be one of [TransferTokenTool, ExchangeTokenTool]
+Action Input: the input to the action
+Observation: the result of the action
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question
+
+Begin!
+
+Question: {input}
+Thought:{agent_scratchpad}
+```
 
 ### Smart-contract backed tool
 
@@ -482,7 +553,7 @@ contract SimpleSmartContractTool is IERCAgentTool {
 }
 ```
 
-### Example agent and executor
+### Demo agent 
 
 Below is the implementation of an actual agent that could be responsible for managing a user’s deposits in a liquidity pool contract, and taking action based on the user’s natural language instructions.
 
@@ -566,74 +637,6 @@ contract WalletAgent is IERCAgent {
 }
 ```
 
-### Agent executor precompile
-
-We provide pseudocode for agent executor precompile that uses the Re-Act framework for reasoning.
-
-```python
-def runNextIteration(modelId, basePrompt, tools, agentReasoning, prompt):
-    llm = modelRegistry.get(modelId)
-    reasoningEngine = reasoningRegistry.get(Engines.RE_ACT)
-
-    toolsMetadata = [{
-        'name': tool.name(), 
-        'description': tool.description(),
-        'inputDescription': tool.inputDescription()
-    } for tool in tools]
-    toolsByName = {tool.name: tool for tool in toolsMetadata}
-    
-    llmPrompt = reasoningEngine.buildPrompt(basePrompt, toolsMetadata, agentReasoning, prompt)
-    llmOutput = llm.run(llmPrompt)
-    nextStep = reasoningEngine.parse(llmOutput)
-    
-    if nextStep.isDone():
-        return AgentIterationResult(isFinalAnswer=True, finalAnswer=nextStep.answer)
-    
-    tool = toolsByName.get(nextStep.toolName)
-    toolInputByName = {input.name: input for input in tool.inputDescription.paramDescriptions}
-    
-    params = json.parse(nextStep.params)
-    parsedParams = {}
-
-    for param in params.array():
-        paramDescription = toolInputByName[param.name]
-        parsedParams[param.name] = IERCAgentTool.ParamValue(
-            type=paramDescription.type,
-            value=abi.encode(param.value, paramDescription.type))
-
-    abiEncodedParams = abi.encode([params.value for params in parsedParams])
-    
-    return AgentIterationResult(
-        isFinalAnswer=False,
-        tool=tool,
-        toolInput=IERCAgentTool.Input(params=parsedParams, abiEncodedParams=abiEncodedParams),
-        agentReasoning=nextStep.reasoning)
-```
-
-In this case, the reasoning engine is Re-Act, which is essentially just a very specific prompt format that makes the LLM work better for step by step thinking and reasoning.
-
-Answer the following questions as best you can. 
-You have access to the following tools:
-- TransferTokenTool: Sends tokens from ...
-- ExchangeTokenTool: Swaps tokens from ...
-
-Use the following format:
-
-```
-Question: the input question you must answer
-Thought: you should always think about what to do
-Action: the action to take, should be one of [TransferTokenTool, ExchangeTokenTool]
-Action Input: the input to the action
-Observation: the result of the action
-... (this Thought/Action/Action Input/Observation can repeat N times)
-Thought: I now know the final answer
-Final Answer: the final answer to the original input question
-
-Begin!
-
-Question: {input}
-Thought:{agent_scratchpad}
-```
 
 ## Security Considerations
 
