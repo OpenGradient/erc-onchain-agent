@@ -677,10 +677,6 @@ Malicious actors might try to manipulate an agent through prompt injection - cra
 
 In case an input prompt comes from end-users, it is also important to consider all cases where someone might want to do prompt injection attacks against an agent. Implementing robust input validation and sanitization mechanisms to ensure that the inputs provided to agents are within expected and safe ranges could help.
 
-### Upgradeability and Versioning
-
-As mentioned in the previous point, upgradeability of agents could pose significant risk factors. However, where it is appropriate, consider including a mechanism for contract upgradeability or versioning to address potential bugs or vulnerabilities. Make sure to provide users and developers with a clear process for migrating to new prompts and configurations, potentially relying on DAO mechanisms.
-
 ### Gas Limit and Cost Estimation
 
 Simulating an agent's execution is generally not feasible, since it depends on unpredictable output from LLMs. Therefore, traditional gas and cost estimation methods will fail to accurately predict how much gas will be needed to run an agent with a given prompt. One alternative is to manually pick an upper bound for the amount of gas the user is willing to pay based on the complexity of the task, or use alternative "billing" mechanisms for executing agents through the use of paymasters or custom protocols.
