@@ -32,7 +32,7 @@ To demonstrate how all of this fits together, we show an example workflow below 
 
 The agent first uses an LLM to analyse the tweet. This LLM could be a smaller and cheaper model, suitable for sentiment analysis. Next, it feeds the sentiment score and live pricing data to a forecasting model to predict price movement. The output of the forecasting model is then passed to an Optimizer tool that takes into account the forecasts and current exposure to make a final decision. If the optimizer indicates that a trade should be carried out, the agent forwards it to an execution model that identifies the best way to execute the trade and performs it.
 
-This example highlights how powerful nested and composable agents are, where each one can be focused on driving a particular well-defined task, and can offload complexities to other, specialized agents in a completely flexible way. 
+In this example, the agent utilizes specialzied models and tools for certain sub-tasks so it doesn't have to implement everything on its own. The models can be classical ML models or complex LLMs. In addition, it can also build on top of other agents more more complex tasks, such as running the Optimizer. This example highlights, how powerful having an open and composable architecture for agents and models can be, unlocking the pathway to a future where rather than building all-knowing agents and models, we can offload work to specialized models that are reusable and more effective at what they do.
 
 ### Execution Environment
 
