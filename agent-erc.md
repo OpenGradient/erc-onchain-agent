@@ -10,15 +10,15 @@ This ERC proposes the introduction of a framework for on-chain interoperable age
 
 In addition, we also introduce the concept of on-chain tools. Tools allow agents to execute specific tasks and interact with their environment - agents can reason about what tools they need to use and in what way, in order to achieve their overall goal. These tools are designed such that they are easy to reuse between different agents. Tools can either be backed by simple smart contracts, which allows the agent to interact with smart contracts - the same way a regular end-user would, or other ML or AI models. The use of AI models as tools allows agent to outsource complex tasks to optimized models. We believe that rather than having a single all-knowing models that agents will rely on for every task, they can utilizer multiple smaller models, each optimized for a specific goal. This architecture results in better utility and effectiveness.
 
-Furthermore, we also lay out a concrete implementation of an on-chain agent that runs in a verifiable on-chain execution environment, and is customizable for any task. We also created a autonomous trading agent for demonstrating how straightforward it is to create your own agent using this framework.
+Last but not least, we also lay out an abstract implementation of an on-chain agent that runs in a verifiable on-chain execution environment, and is customizable for any task. We also created a autonomous trading agent for demonstrating how straightforward it is to create your own agent using this framework.
 
 ## Motivation
 
 ### Why we need on-chain agents
 
-On-chain agents leverage Large Language Models (LLMs) within the Ethereum ecosystem to create a powerful combination of language understanding, reasoning, and decentralized execution. The primary motivation behind this proposal is to address the critical need for trust and transparency in high-impact scenarios where agents might be utilized, such as executing trades and managing DAOs. Blockchain’s intrinsic properties give agents the properties we need to be able to trust them with these critical decisions. Specifically, blockchain gives agents traceability, verifiability, immutability, censorship-resistance, global accessibility, and a collaborative development environment. Up until now, almost all LLMs and agents were hosted on centralized infrastructure - we hope that with the introduction of this standard, as well as ongoing technological developments, we can build a pathway for bringing them directly onto the blockchain.
+On-chain agents leverage Large Language Models (LLMs) within the EVM ecosystem to create a powerful combination of language understanding, reasoning, and decentralized execution. The primary motivation behind this proposal is to address the critical need for trust and transparency in high-impact scenarios where agents might be utilized, such as executing trades, managing DAOs or making financial decisions. Blockchain’s intrinsic properties give agents the attributes we need to be able to trust them with these critical decisions. Specifically, blockchain gives agents traceability, verifiability, immutability, censorship-resistance, global accessibility, and a collaborative development environment. Up until now, almost all LLMs and agents were hosted on centralized infrastructure - we hope that with the introduction of this standard, as well as ongoing technological developments, we can build a pathway for bringing them directly onto the blockchain.
 
-At a high-level, similar to off-chain agents, we expect on-chain agents to be able to make decisions on their own, and perform tasks in their environment without any human involvement - though we might expose options for them to get human feedback. Agents should also be able to adapt to new situations and scenarios that they haven’t been explicitly programmed for, enhancing their flexibility and effectiveness. Finally, we also expect agents to break down goals into small tasks and to utilize tools to achieve them according to their reasoning.
+At a high-level, similar to off-chain agents, we expect on-chain agents to be able to make decisions on their own, and perform tasks in their environment without any human involvement - though we might expose options for them to get human feedback. Agents should also be able to adapt to new situations and scenarios that they haven’t been explicitly programmed for, enhancing their flexibility and effectiveness. Finally, we also expect agents to break down goals into small tasks and to utilize tools to achieve them according to their reasoning, which is achieved through function calling models or reasoning techniques such as ReAct Prompting.
 
 ### Composability
 
@@ -607,7 +607,7 @@ contract WalletAgent is IERCAgent {
         "Use this to deploy or withdraw tokens from a liquidity pool",
         "The action you want to take, the address of the tokens, and the amount",
         string(abi.encodePacked(
-            "You are an agent deployed on an Ethereum blockchain, responsible for managing a user's wallet. ", 
+            "You are an agent deployed on an EVM blockchain, responsible for managing a user's wallet. ", 
             "The wallet's owner will give you instructons in simple terms, ",
             "and your goal is to execute the instructions from the user, given the list of tools you can use...")),
         new IERCAgentTool[](4),
