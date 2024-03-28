@@ -28,7 +28,7 @@ We expect agents to build on top of each other, through the use of tools and rea
 
 To demonstrate how all of this fits together, we show an example workflow below where a user is trying to apply for a loan. The lending pool requires that the user’s request is first evaluated by the “loan application agent”. The agent has access to several tools, including a specialized credit score agent, as well as access to the lending pool DAO that sets what criteria should be used to evaluate new applicants. The criteria can be expressed in easy-to-understand and intuitive natural language, and can be changed by a DAO proposal any time. The loan application agent uses a reasoning engine to figure out that it first needs to get the latest evaluation criteria from the DAO, and then use the credit score agent to calculate a credit score based on the DAO's evaluation criteria. Once it receives the score, it either approves or denies the request based on a hardcoded limit, which could also be customizable. 
 
-![Loan application workflow](assets/loan-app.png)
+![Loan application workflow](assets/trading-agent.png)
 
 This example highlights how powerful nested and composable agents are, where each one can be focused on driving a particular well-defined task, and can offload complexities to other, specialized agents in a completely flexible way. 
 
