@@ -10,13 +10,13 @@ This ERC proposes the introduction of on-chain interoperable agents, a novel dev
 
 In addition, we also introduce the concept of on-chain tools. Tools allow agents to execute specific tasks and interact with their environment - agents can reason about what tools they need to use and in what way, in order to achieve their overall goal. These tools are designed such that they are easy to reuse between different agents, they can either be backed by other agents, or regular smart contracts that are already deployed on the network or are specifically made for the given tool. 
 
-Furthermore, we also lay out a concrete implementation of an chain agent that runs in a fully on-chain execution environment, and is customizable for any task. We also create a DeFi lending pool manager agent for demonstrating how straightforward it is to create your own agent using this framework.
+Furthermore, we also lay out a concrete implementation of an on-chain agent that runs in a fully on-chain execution environment, and is customizable for any task. We also created a DeFi lending pool manager agent for demonstrating how straightforward it is to create your own agent using this framework.
 
 ## Motivation
 
 ### Why we need on-chain agents
 
-On-chain agents leverage Large Language Models (LLMs) within the Ethereum ecosystem to create a powerful combination of language understanding, reasoning, and decentralized execution. The primary motivation behind this proposal is to address the critical need for trust and transparency in high-impact scenarios where agents might be utilized, such as executing trades and managing DAOs. Blockchain’s intristic properties give agents the properties we need to be able to trust them with these critical decisions. Specifically, blockchain gives agents traceability, verifiability, immutability, censorship-resistance, global accessibility, and a collaborative development environment. Up until now, almost all LLMs and agents were hosted on centralized infrastructure - we hope that with the introduction of this standard, as well as ongoing technological developments, we can build a pathway for bringing them directly onto the blockchain.
+On-chain agents leverage Large Language Models (LLMs) within the Ethereum ecosystem to create a powerful combination of language understanding, reasoning, and decentralized execution. The primary motivation behind this proposal is to address the critical need for trust and transparency in high-impact scenarios where agents might be utilized, such as executing trades and managing DAOs. Blockchain’s intrinsic properties give agents the properties we need to be able to trust them with these critical decisions. Specifically, blockchain gives agents traceability, verifiability, immutability, censorship-resistance, global accessibility, and a collaborative development environment. Up until now, almost all LLMs and agents were hosted on centralized infrastructure - we hope that with the introduction of this standard, as well as ongoing technological developments, we can build a pathway for bringing them directly onto the blockchain.
 
 At a high-level, similar to off-chain agents, we expect on-chain agents to be able to make decisions on their own, and perform tasks in their environment without any human involvement - though we might expose options for them to get human feedback. Agents should also be able to adapt to new situations and scenarios that they haven’t been explicitly programmed for, enhancing their flexibility and effectiveness. Finally, we also expect agents to break down goals into small tasks and to utilize tools to achieve them according to their reasoning.
 
@@ -131,15 +131,15 @@ interface IERCAgentTool {
 ```
 
 - `InputDescription`: Describes all parameters that the tool expects. The agent might use this metadata to generate the input values for tool use.
-- `ParamDescription`: Describes a single parameter that the tool expects. The agent might use this metadata to generate a value for the specific paramter for tool use.
-- `name`: Gives a meaningful and reasonably unique name to the tool. Agents could use this to decide when it’s appropriate to use this tool. Example could be TokenTransferTool, ViewBalanceTool.
+- `ParamDescription`: Describes a single parameter that the tool expects. The agent might use this metadata to generate a value for the specific parameter for tool use.
+- `name`: Gives a meaningful and reasonably unique name to the tool. Agents could use this to decide when it’s appropriate to use this tool. Examples could be TokenTransferTool, ViewBalanceTool.
 - `description`: Gives a short description of what the tool does, and when it should be used. Agents could use this description to decide if it’s appropriate to utilize this tool. An example might be: "Transfers tokens from one user to another".
 - `inputDescription`: Describes the format of the input (if any) the tool expects to receive. Agents will use this to generate an input based on the specific task they want to achieve. 
-- `run`: Triggers the execution of an tool with a given input. Tools can either be executed synchronously or asynchronously. When executed synchronously, the result will be immediately returned to the called. However, when it is executed asynchronously, result will be passed to the resultHandler, which must implement the IERCAgentClient interface. When executed asynchronously, the run method will commit and return a runId that will be used to invoke the resultHandler once the agent execution has completed. This allows tools and agents to be executed off-chain, and to post the result through this callback mechanism once it’s ready. In addition, the run method may also be used to add custom checks or verification logic to the tool. It is not possible to determine based on the interface alone whether a tool will run synchronously or asynchronously.
+- `run`: Triggers the execution of a tool with a given input. Tools can either be executed synchronously or asynchronously. When executed synchronously, the result will be immediately returned to the called. However, when it is executed asynchronously, result will be passed to the resultHandler, which must implement the IERCAgentClient interface. When executed asynchronously, the run method will commit and return a runId that will be used to invoke the resultHandler once the agent execution has completed. This allows tools and agents to be executed off-chain, and to post the result through this callback mechanism once it’s ready. In addition, the run method may also be used to add custom checks or verification logic to the tool. It is not possible to determine based on the interface alone whether a tool will run synchronously or asynchronously.
 
 ### On-chain Agent abstract class
 
-Next, we define an on-chain (synchronous) agent abstract class. This contract can easily be subclassed to implement a custom agent for any task without having to deal with low-level implementation details. The agent it self runs synchronously using an `agentExecutor` conract, meaning that clients don't have to rely on callbacks to receive its result.
+Next, we define an on-chain (synchronous) agent abstract class. This contract can easily be subclassed to implement a custom agent for any task without having to deal with low-level implementation details. The agent it self runs synchronously using an `agentExecutor` contract, meaning that clients don't have to rely on callbacks to receive its result.
 
 An agent is backed by an LLM, and uses a set of tools to operate in its environment. Since agents themselves can also be used as tools in other agents, we make them implement the `IERCAgentTool` interface.
 
@@ -147,7 +147,7 @@ An agent is backed by an LLM, and uses a set of tools to operate in its environm
 /// @notice Implements a synchronous agent that's backed by an on-chain agentExecutor 
 abstract contract IERCAgent is IERCAgentTool {
 
-    /// @notice Logged when the agent completes an run.
+    /// @notice Logged when the agent completes a run.
     /// @param runId the ID of the run
     /// @param executionSteps contains any additional set of details about
     ///   what actions the agent took and how it completed the task, in order. 
@@ -295,13 +295,13 @@ abstract contract IERCAgent is IERCAgentTool {
 - `agentExecutorContract`: A contract that can execute a single iteration of an agent. Must implement the `IERCAgentExecutor` interface. In many cases, this can be a precompile to optimize for speed of execution, cost and flexibility. 
 - `name`, `description`, `inputDescription`: see `IERCAgentTool`.
 - `tools`: The set of tools the agent can operate with. Can either be a regular smart contract function, or another agent that’s encapsulated in a smart contract. 
-- `agentMaxIterations`: the maximum number times the agent can use a tool as part of a single execution (ie calling run). This makes sure the agent eventually terminates in case it ever gets lost and doesn’t have a path forward for solving its task.
+- `agentMaxIterations`: the maximum number of times the agent can use a tool as part of a single execution (i.e. calling run). This makes sure the agent eventually terminates in case it ever gets lost and doesn’t have a path forward for solving its task.
 - `AgentRunResult`: an event that helps inspect what the agent actually did in more detail, how it arrived at its final answer, and what (if any) actions it took as part of it. For example, if the agent transferred some token on behalf of you to another user, the executionSteps should have an explicit step about this action, such as `Transfer{from: A, to: B, token: X, amount: Y}`
-- `run`: we implement a synchronous agent execution method that relies on the `agentExecutorContract` to build and run the LLM prompts using the help of a reasoning engine such as Re-Act. The precompile builds the prompt using the agent name, description, tools and user input, and adds reasoning-specific parts as well to the prompt. It then executes the prompt, parses the response and returns it to the agent contract. The response might either be a finalAnswer, meaning that the agent is done with its task, or a tool invocation, which means that the agents wants to execute a tool in order to achieve its overall goal. In addition to the tool and its input, we also return the agent’s reasoning so far, so for the next iteration it can pick up where it left off and figure out what it needs to do next. We do this until the agent arrives at a final answer, or until we exceed the `agentMaxIterations`, in which case we throw an error.
+- `run`: we implement a synchronous agent execution method that relies on the `agentExecutorContract` to build and run the LLM prompts using the help of a reasoning engine such as Re-Act. The precompile builds the prompt using the agent name, description, tools and user input, and adds reasoning-specific parts as well to the prompt. It then executes the prompt, parses the response and returns it to the agent contract. The response might either be a finalAnswer, meaning that the agent is done with its task, or a tool invocation, which means that the agent wants to execute a tool in order to achieve its overall goal. In addition to the tool and its input, we also return the agent’s reasoning so far, so for the next iteration it can pick up where it left off and figure out what it needs to do next. We do this until the agent arrives at a final answer, or until we exceed the `agentMaxIterations`, in which case we throw an error.
 
 ### Agent executor interface
 
-Next, we define an interface for running a single iteration of an `IERCAgent`. Note that a single call to `run` on an agent might result in 1 more more iterations, as the agent might decidet to use multiple tools to achieve its task. 
+Next, we define an interface for running a single iteration of an `IERCAgent`. Note that a single call to `run` on an agent might result in one or more iterations, as the agent might decide to use multiple tools to achieve its task. 
 
 A call to this executor will return what the agent thinks should do next, whether it's using another tool, or returning a final answer. We provide a precompile implementation of this interface later.
 
@@ -392,7 +392,7 @@ interface IERCAgentClient {
 }
 ```
 
-- `handleAgentResult`: called by the agent when the result of the execution with the given `runId` is available. Clients could expect this callback to be called either as part of the original run call, when the agent run synchronously, or as a separate transaction if the agent is executed asynchronously. 
+- `handleAgentResult`: called by the agent when the result of the execution with the given `runId` is available. Clients could expect this callback to be called either as part of the original run call, when the agent runs synchronously, or as a separate transaction if the agent is executed asynchronously. 
 
 ## Rationale
 
@@ -400,7 +400,7 @@ The standard is intended to establish an interface and execution framework for a
 
 In order to allow both fully on-chain, and off-chain agent execution environments, we introduced the `IERCAgentClient` which allows for asynchronous execution with a callback. We want to provide as much flexibility for both current and future agent implementations as possible. Both on-chain and off-chain AI and ML inference solutions are being built in the community, so it is important to remain open to a wide range of solutions. In our reference, we provide a synchronous, on-chain agent executor precompile that could be used to run agents seamlessly in a single transaction. However, off-chain or asynchronous executors might be more appropriate for existing technologies that exist. We expect that specialized rollups or networks will make it more feasible to execute agents on-chain. 
 
-Through the use of the `IERCAgentTool` interface, we can us turn almost any smart contract into a tool for an agent to use. Human-readable descriptions have to be provided for each tool and parameter so LLMs know when to use them. To showcase the strenghts of this interface, we later provide an example implementation of a simple wrapper tool `SimpleSmartContractTool` that can wrap any smart contract and expose it to agents.
+Through the use of the `IERCAgentTool` interface, we can turn almost any smart contract into a tool for an agent to use. Human-readable descriptions have to be provided for each tool and parameter so LLMs know when to use them. To showcase the strengths of this interface, we later provide an example implementation of a simple wrapper tool `SimpleSmartContractTool` that can wrap any smart contract and expose it to agents.
 
 In this proposal, we also showed how a fully on-chain agent might be structured (`IERCAgent`). This agent depends on an `agentExecutorContract` that actually executes the LLM prompts. In the reference section, we provide a precompile that implements this interface. Finally, to showcase how straightforward it is to build your custom agent using this framework, we construct a `WalletAgent` further down.
 
@@ -452,7 +452,7 @@ def runNextIteration(modelId, basePrompt, tools, agentReasoning, toolResults, pr
 ```
 
 In this case, the reasoning engine is Re-Act, which is essentially just a very specific prompt format that makes the LLM work better for step by step thinking and reasoning.
-You can see how such a prompt might look like below.
+You can see how such a prompt might look below.
 
 ```
 You are a helpful assistant deployed to a blockchain , helping a user manage his/her on-chain wallet that contains various tokens.
@@ -663,7 +663,7 @@ Below, you can see how a simple task of depositing 10 ETH into the pool might be
 
 ### AI
 
-As with any LLM-backed system, users and developers of on-chain agents must exercise caution when letting agents decide and execute actions on their own. Especially in a irreversible environment like the blockchain, where bad decisions cannot be reverted. Finding the right balance between safety and autonomy will depend on the specific use-cases. One solution that is often applied for LLMs is requiring human confirmation before any action is taken. This of course restricts the usability and responsiveness of agents, however might be appropriate for certain high-impact and complex scenarios. 
+As with any LLM-backed system, users and developers of on-chain agents must exercise caution when letting agents decide and execute actions on their own. Especially in an irreversible environment like the blockchain, where bad decisions cannot be reversed. Finding the right balance between safety and autonomy will depend on the specific use-cases. One solution that is often applied for LLMs is requiring human confirmation before any action is taken. This of course restricts the usability and responsiveness of agents, however might be appropriate for certain high-impact and complex scenarios. 
 
 ### Dependencies
 
@@ -673,7 +673,7 @@ In addition, even for regular smart contract tools, the agent might decide to us
 
 ### Prompt injection
 
-Malicious actors might try to manipulate an agent through prompt injection - crafting strings that tries to derail the agent from its original task and instructions. This is especially relevant when accepting raw input from users. Developers should also check if the tools and agents they depend on can change their metadata, such as name and description, which goes into the agent's prompt. Developers might also want to only use agents whose metadata is hardcoded and cannot be updated, in order to avoid tools returning malicious strings.
+Malicious actors might try to manipulate an agent through prompt injection - crafting strings that try to derail the agent from its original task and instructions. This is especially relevant when accepting raw input from users. Developers should also check if the tools and agents they depend on can change their metadata, such as name and description, which goes into the agent's prompt. Developers might also want to only use agents whose metadata is hardcoded and cannot be updated, in order to avoid tools returning malicious strings.
 
 In case an input prompt comes from end-users, it is also important to consider all cases where someone might want to do prompt injection attacks against an agent. Implementing robust input validation and sanitization mechanisms to ensure that the inputs provided to agents are within expected and safe ranges could help.
 
