@@ -51,7 +51,7 @@ In this proposal, we'll dive deeper into how Embedded execution might look like,
 
 ## Specification
 
-We are going to define the specifications going from the bottom up, first showing the tool spec, then an on-chain agent spec and implementation, and its client interface. Because we want agents to be reused as tools by higher-level agents, agents themselves will also implement the tool spec. Finally, we also specify an agent executor smart contract interface that could be implemented as a precompile for optimal efficiency.
+We are going to define the specifications going from the bottom up, first showing the tool spec, then an on-chain agent spec and implementation, and its client interface. Because we want agents to be reused as tools by higher-level agents, agents themselves will also implement the tool spec. Finally, we define an interface for Embedded execution that could be implemented as a precompile for example.
 
 ### Tool definition
 
@@ -144,9 +144,9 @@ interface IERCAgentTool {
 - `inputDescription`: Describes the format of the input (if any) the tool expects to receive. Agents will use this to generate an input based on the specific task they want to achieve. 
 - `run`: Triggers the execution of a tool with a given input. Tools can either be executed synchronously or asynchronously. When executed synchronously, the result will be immediately returned to the called. However, when it is executed asynchronously, result will be passed to the resultHandler, which must implement the IERCAgentClient interface. When executed asynchronously, the run method will commit and return a runId that will be used to invoke the resultHandler once the agent execution has completed. This allows tools and agents to be executed off-chain, and to post the result through this callback mechanism once it’s ready. In addition, the run method may also be used to add custom checks or verification logic to the tool. It is not possible to determine based on the interface alone whether a tool will run synchronously or asynchronously.
 
-### On-chain Agent abstract class
+### Agent abstract class
 
-Next, we define an on-chain (synchronous) agent abstract class. This contract can easily be subclassed to implement a custom agent for any task without having to deal with low-level implementation details. The agent it self runs synchronously using an `agentExecutor` contract, meaning that clients don't have to rely on callbacks to receive its result.
+Next, we define an abstract agent class that is compatible with Embedded execution. This contract can easily be extended to implement a custom agent for any task without having to deal with low-level implementation details. The agent it self runs synchronously using an `agentExecutor` contract, meaning that clients don't have to rely on callbacks to receive its result.
 
 An agent is backed by an LLM, and uses a set of tools to operate in its environment. Since agents themselves can also be used as tools in other agents, we make them implement the `IERCAgentTool` interface.
 
