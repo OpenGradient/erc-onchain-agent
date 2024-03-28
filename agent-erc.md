@@ -38,13 +38,16 @@ In this example, the agent utilizes specialzied models and tools for certain sub
 
 The current blockchain environment is infeasible for directly executing models agents on-chain, primarily due to the enormous cost and computational capacity required to run large or even small models. Currently, the most promising alternative is off-chain inference that is verified on-chain through cryptographic or cryptoeconomic security schemes, such as ZKML (Zero-Knowledge Machine-Learning) or OP-ML (Optimistic Machine-Learning). This proposal also anticipates that further technological advancements will diminish drawbacks over time, envisioning a future where blockchain becomes an icnreasingly viable ecosystem for agents and AI.
 
-We propose 2 types of execution frameworks in order to provide as much flexibility as possible for current and future agent implementations.
+We propose 2 types of execution frameworks in order to provide as much flexibility as possible for current and future agent implementations:
 
-First is an off-chain environment, where only the prompts, tools and overall structure of the agent and tools are stored on-chain, but the actual execution is handled by off-chain networks, such as oracles. This environment makes it more straightforward to implement agents right now, however has some drawbacks, such as lack of verifiability, and increased latency in execution. Code also has to be structured in a way that allows oracles to asynchronously post model results.
+- *Callback execution*
+- *Embedded execution*
 
-The second environment is on-chain, where the end to end execution of the agent is handled by the blockchain network, in a verifiable way. This method’s primary downside is cost, and lack of current capabilities to execute AI models on-chain, however, with the latest developments in zero-knowledge machine learning (zkml) and other cryptographic schemes such az op-ml, we believe that on-chain execution will become an increasingly feasible and desirable option. 
+First is Callback execution, where only the prompts, tools and overall structure of the agent and tools are stored on-chain, but the actual execution are handled by traditional off-chain networks, such as oracles. When the agent requires executing an AI model, such as LLM, a request is initiated to the off-chain environment which returns the output of the model to the agent through a callback function. A proof might also be returned in order to verify the model execution. The agent can then continue its execution using the output of the model. This setup makes it more straightforward to implement agents right now, however, due to the callback transactions required, it makes it harder to implement and reason about the current state of agents and ensure atomicity.
 
-In this proposal, we'll dive deeper into how on-chain execution might look like, however, all of the interfaces proposed are designed with both off-chain and on-chain execution in mind.
+The second option is Embedded execution, where specialized blockchain networks manage, handle and verify the off-chain execution of models as part of the EVM, providing a more developer-friendly platform for building and running agents. This functionality could be exposed through a precompile or other similar mechanisms, where the underlying VM is responsible for interacting with the external model execution component and the agent smart contract can synchronously receive the model output. This would provide a convenient environment for running agents atomically, within a single transaction, not having to break it down into multiple distinct requests and callback transactions. This approach could also provide both a superior developer and user experience. The primary downside of this approach is the complexity that it would take to build support for off-chain model inference directly into the blockchain and making sure that transactions remain performant.
+
+In this proposal, we'll dive deeper into how Embedded execution might look like, however, all of the interfaces proposed are designed with Callback and Embedded execution in mind.
 
 ## Specification
 
