@@ -36,7 +36,9 @@ In this example, the agent utilizes specialzied models and tools for certain sub
 
 ### Execution Environment
 
-Despite current challenges in on-chain execution, such as costs, latency, and availability of large models, the proposal anticipates technological advancements that will diminish drawbacks over time, envisioning a future where blockchain becomes an increasingly viable ecosystem for trustless agents and AI. We also propose 2 different execution modes that should help accommodate all current and future developments. 
+The current blockchain environment is infeasible for directly executing models agents on-chain, primarily due to the enormous cost and computational capacity required to run large or even small models. Currently, the most promising alternative is off-chain inference that is verified on-chain through cryptographic or cryptoeconomic security schemes, such as ZKML (Zero-Knowledge Machine-Learning) or OP-ML (Optimistic Machine-Learning). This proposal also anticipates that further technological advancements will diminish drawbacks over time, envisioning a future where blockchain becomes an icnreasingly viable ecosystem for agents and AI.
+
+We propose 2 types of execution frameworks in order to provide as much flexibility as possible for current and future agent implementations.
 
 First is an off-chain environment, where only the prompts, tools and overall structure of the agent and tools are stored on-chain, but the actual execution is handled by off-chain networks, such as oracles. This environment makes it more straightforward to implement agents right now, however has some drawbacks, such as lack of verifiability, and increased latency in execution. Code also has to be structured in a way that allows oracles to asynchronously post model results.
 
