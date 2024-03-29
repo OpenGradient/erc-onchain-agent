@@ -579,17 +579,16 @@ contract SimpleSmartContractTool is IERCAgentTool {
 
 ### Token manager agent 
 
-Below is the implementation of an actual agent that could be responsible for issuing and managing tokens on the network.
+Below is the implementation of an actual agent that could be responsible for issuing and managing tokens on the network. To simplify this example, we use `SimpleSmartContractTool` to wrap existing smart contracts, however you can use any custom tool implementation for your agent.
 
 
 ```solidity
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 // demo contract
-interface Pool {
-    function deploy(address asset, uint256 amount) external;
-    function withdraw(address asset, uint256 amount) external;
-    function balance(address asset) external returns (uint256);
+interface ERC20 {
+    function create(string memory symbol, string memory name, uint256 supply) external;
+    function transfer(address token, uint256 amount, address to) external;
 }
 
 
@@ -610,60 +609,50 @@ contract TokenManagerAgent is IERCAgent {
         "llama_model_3",
         "Token Manager Agent",
         "Use this agent to issue and manage tokens on the network",
-        "The action you want to take, such as creating new token, adjusting supply, burning",
+        "The action you want to take, such as creating new token, sending and burning tokens",
         string(abi.encodePacked(
             "You are a bot deployed on an blockchain, your job is to manage and create new", 
             " tokens as instructed. You will receive instructions and you should execute",
             " them as accurately as you can",
             "..."))
-        new IERCAgentTool[](4),
+        new IERCAgentTool[](2),
         10
     ) {
-        ParamDescription[] memory deployParams = new ParamDescription[](2);
-        deployParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to deposit");
-        deployParams[1] = ParamDescription(ParamType.INT, "amount", "amount of tokens to deposit");
+        ParamDescription[] memory createTokenParams = new ParamDescription[](3);
+        createTokenParams[0] = ParamDescription(ParamType.STRING, "symbol", "symbol of token");
+        createTokenParams[1] = ParamDescription(ParamType.STRING, "name", "name of token");
+        createTokenParams[1] = ParamDescription(ParamType.INT, "supply", "initial supply of token");
         tools[0] = new SimpleSmartContractTool(
-            "DeployTool",
-            "Deploy funds into the pool",
+            "CreateTokenTool",
+            "Creates a new ERC-20 token",
             address(0x123),
-            Pool.deploy.selector,
-            IERCAgentTool.InputDescription(deployParams),
+            ERC20.create.selector,
+            IERCAgentTool.InputDescription(createTokenParams),
             true,
-            "Successfully deployed",
+            "Successfully created token",
             ToolResultConverter(address(0)));
 
-        ParamDescription[] memory withdrawParams = new ParamDescription[](2);
-        withdrawParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to withdraw");
-        withdrawParams[1] = ParamDescription(ParamType.INT, "amount", "amount of tokens to withdraw");
+        ParamDescription[] memory sendParams = new ParamDescription[](3);
+        sendParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to send");
+        sendParams[1] = ParamDescription(ParamType.INT, "amount", "amount of tokens to send");
+        sendParams[2] = ParamDescription(ParamType.ADDRESS, "to", "destination of tokens");
         tools[1] = new SimpleSmartContractTool(
-            "WithdrawTool",
-            "Withdraw funds from the pool",
+            "SendTokenTool",
+            "Send the given tokens to a given address",
             address(0x123),
-            Pool.withdraw.selector,
-            IERCAgentTool.InputDescription(withdrawParams),
+            ERC20.transfer.selector,
+            IERCAgentTool.InputDescription(sendParams),
             true,
-            "Successfully withdrawn",
+            "Successfully sent tokens",
             ToolResultConverter(address(0)));
 
-        ParamDescription[] memory viewBalanceParams = new ParamDescription[](1);
-        viewBalanceParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to view balance for");
-        tools[2] = new SimpleSmartContractTool(
-            "ViewBalanceTool",
-            "See user's balance in the pool",
-            address(0x123),
-            Pool.balance.selector,
-            IERCAgentTool.InputDescription(viewBalanceParams),
-            false,
-            "",
-            new ViewBalanceResultConverter());
-        
-        // reusing existing tool
+        // reusing existing tool that is responsible for advanced task
         tools[3] = IERCAgentTool(address(0x12));
     }
 }
 ```
 
-Below, you can see how a simple task of depositing 10 ETH into the pool might be handled by the agent. This task is simple, so only a single tool invocation is required.
+Below, you can see how a task of creating a new token is handled by the agent. This task is simple, so only a single tool invocation is required.
 
 ![Agent execution](assets/agent-flow.png)
 
