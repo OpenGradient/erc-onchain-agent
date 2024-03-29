@@ -1,0 +1,14 @@
+title Agent Execution
+
+User->Agent:"I want to deposit 10 ETH"
+Agent->AgentExecutor:metadata, tools, currentReasoning: \"\", output: []\ninput: "I want to deposit 10 ETH"
+AgentExecutor->LLM:run prompt with Re-Act framework
+LLM->AgentExecutor:Thought: "Need to deposit 10 ETH...",\nAction: DeployTool,\nInput: "10 ETH"
+AgentExecutor->Agent:name:DeployTool, params:\n{amount:10,token:ETH}
+Agent->DeployTool:calldata: 10 ETH
+DeployTool->Agent:"Successfully deployed 10 ETH"
+Agent->AgentExecutor:metadata, tools,\ncurrentReasoning: "Thought: Need to deposit 10 ETH ...",\noutput: ["Successfully deployed 10 ETH "],\ninput: "I want to deposit 10 ETH"
+AgentExecutor->LLM:Run prompt with latest\n reasoning and outputs
+LLM->AgentExecutor:FinalAnswer: Task done, successfully \ndeposited 10 ETH
+AgentExecutor->Agent:FinalAnswer: "Task done, successfully deposited ..."
+Agent->User:"Task done, successfully deposited 10 ETH." 
