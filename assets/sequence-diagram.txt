@@ -1,14 +1,14 @@
 title Agent Execution
 
-User->Agent:"I want to deposit 10 ETH"
-Agent->AgentExecutor:metadata, tools, currentReasoning: \"\", output: []\ninput: "I want to deposit 10 ETH"
+User->Agent:"Create a new token called\nAgentInu, ANU with 10 million supply"
+Agent->AgentExecutor:metadata, tools, currentReasoning: \"\", output: []\ninput: "Create a new token called AgentInu, ANU\nwith 10 million supply"
 AgentExecutor->LLM:run prompt with Re-Act framework
-LLM->AgentExecutor:Thought: "Need to deposit 10 ETH...",\nAction: DeployTool,\nInput: "10 ETH"
-AgentExecutor->Agent:name:DeployTool, params:\n{amount:10,token:ETH}
-Agent->DeployTool:calldata: 10 ETH
-DeployTool->Agent:"Successfully deployed 10 ETH"
-Agent->AgentExecutor:metadata, tools,\ncurrentReasoning: "Thought: Need to deposit 10 ETH ...",\noutput: ["Successfully deployed 10 ETH "],\ninput: "I want to deposit 10 ETH"
+LLM->AgentExecutor:Thought: "Need to create new token...",\nAction: CreateTokenTool,\nInput: "name:AgentInu, symbol:ANU: supply: 10,000,000"
+AgentExecutor->Agent:name:CreateTokenTool, params:\n{name:"AgentInu",symbol:"ANU",supply:10000000}
+Agent->CreateTokenTool:calldata: AgentInu ANU 10_000_000
+CreateTokenTool->Agent:"Successfully created token"
+Agent->AgentExecutor:metadata, tools,\ncurrentReasoning: "Thought: Need to create new token...",\noutput: ["Successfully created token"],\ninput: "Create a new token called AgentInu..."
 AgentExecutor->LLM:Run prompt with latest\n reasoning and outputs
-LLM->AgentExecutor:FinalAnswer: Task done, successfully \ndeposited 10 ETH
-AgentExecutor->Agent:FinalAnswer: "Task done, successfully deposited ..."
-Agent->User:"Task done, successfully deposited 10 ETH." 
+LLM->AgentExecutor:FinalAnswer: Task done, successfully \ncreated AgentInu token
+AgentExecutor->Agent:FinalAnswer: "Task done, successfully created ..."
+Agent->User:"Task done, successfully created AgentInu token" 

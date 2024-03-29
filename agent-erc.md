@@ -591,16 +591,6 @@ interface ERC20 {
     function transfer(address token, uint256 amount, address to) external;
 }
 
-
-contract ViewBalanceResultConverter is ToolResultConverter {
-
-    function convertToString(bytes memory result) external override returns (string memory) {
-        (uint256 balance) = abi.decode(result, (uint256));
-
-        return string.concat("The balance is: ", Strings.toString(balance));
-    }
-}
-
 /// @notice demo agent
 contract TokenManagerAgent is IERCAgent {
 
@@ -654,7 +644,7 @@ contract TokenManagerAgent is IERCAgent {
 
 Below, you can see how a task of creating a new token is handled by the agent. This task is simple, so only a single tool invocation is required.
 
-![Agent execution](assets/agent-flow.png)
+![Agent execution](assets/token-agent-flow.png)
 
 ## Security Considerations
 
