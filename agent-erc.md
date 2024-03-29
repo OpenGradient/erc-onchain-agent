@@ -10,7 +10,7 @@ This ERC proposes the introduction of a framework for on-chain interoperable age
 
 In addition, we also introduce the concept of on-chain tools. Tools allow agents to execute specific tasks and interact with their environment - agents can reason about what tools they need to use and in what way, in order to achieve their overall goal. These tools are designed such that they are easy to reuse between different agents. Tools can either be backed by simple smart contracts, which allows the agent to interact with smart contracts - the same way a regular end-user would, or other ML or AI models. The use of AI models as tools allows agent to outsource complex tasks to optimized models. We believe that rather than having a single all-knowing models that agents will rely on for every task, they can utilizer multiple smaller models, each optimized for a specific goal. This architecture results in better utility and effectiveness.
 
-Last but not least, we also lay out an abstract implementation of an on-chain agent that runs in a verifiable on-chain execution environment, and is customizable for any task. We also created a autonomous trading agent for demonstrating how straightforward it is to create your own agent using this framework.
+Last but not least, we also lay out an abstract implementation of an on-chain agent that runs in a verifiable on-chain execution environment, and is customizable for any task. We also created a autonomous token manager agent for demonstrating how straightforward it is to create your own agent using this framework.
 
 ## Motivation
 
@@ -577,9 +577,9 @@ contract SimpleSmartContractTool is IERCAgentTool {
 }
 ```
 
-### Trading agent 
+### Token manager agent 
 
-Below is the implementation of an actual agent that could be responsible for autonomously executing trades on the network.
+Below is the implementation of an actual agent that could be responsible for issuing and managing tokens on the network.
 
 
 ```solidity
@@ -603,18 +603,19 @@ contract ViewBalanceResultConverter is ToolResultConverter {
 }
 
 /// @notice demo agent
-contract WalletAgent is IERCAgent {
+contract TokenManagerAgent is IERCAgent {
 
     constructor() IERCAgent(
         address(0x19),
         "llama_model_3",
-        "Wallet Agent",
-        "Use this to deploy or withdraw tokens from a liquidity pool",
-        "The action you want to take, the address of the tokens, and the amount",
+        "Token Manager Agent",
+        "Use this agent to issue and manage tokens on the network",
+        "The action you want to take, such as creating new token, adjusting supply, burning",
         string(abi.encodePacked(
-            "You are an agent deployed on an EVM blockchain, responsible for managing a user's wallet. ", 
-            "The wallet's owner will give you instructons in simple terms, ",
-            "and your goal is to execute the instructions from the user, given the list of tools you can use...")),
+            "You are a bot deployed on an blockchain, your job is to manage and create new", 
+            " tokens as instructed. You will receive instructions and you should execute",
+            " them as accurately as you can",
+            "..."))
         new IERCAgentTool[](4),
         10
     ) {
