@@ -605,7 +605,7 @@ contract TokenManagerAgent is IERCAgent {
             " tokens as instructed. You will receive instructions and you should execute",
             " them as accurately as you can",
             "..."))
-        new IERCAgentTool[](2),
+        new IERCAgentTool[](3),
         10
     ) {
         ParamDescription[] memory createTokenParams = new ParamDescription[](3);
