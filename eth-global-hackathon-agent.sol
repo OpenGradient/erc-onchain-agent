@@ -30,8 +30,10 @@ interface IAPITool {
     ///   the result handler once the operation is ready.
     /// @return result only present when the tool was executed synchronously and runId is -1.
     ///   Do not use unless the runId returned was -1. 
-    function run(string memory input) external returns (int256 runId, string memory result);
+    function run(string memory input) external returns (string memory result);
 }
+
+// ======= TWITTER API TOOLS ==========
 
 abstract contract IReadTweetTool is IAPITool {
     struct Tweet {
@@ -63,14 +65,82 @@ abstract contract IWriteTweetTool is IAPITool {
     }
 }
 
-interface writeTweet is IAPITool {
-    /// @notice Returns the name of this tool, should be short and meaningful. 
-    /// @return Name of the tool.
-    function name() external view returns (string memory);
+// ======= TWITTER API AGENT ==========
+
+/// @notice Implements a synchronous agent that's backed by an on-chain agentExecutor contract
+abstract contract ITwitterAPIAgent is IAPITool {
+
+    /// @notice Logged when the agent completes an execution triggered by calling run.
+    /// @param runId the ID of the run
+    /// @param executionSteps contains any additional set of details about
+    ///   what actions the agent took and how it completed the task, in order. 
+    ///   May be empty. 
+    /// @param requester the address that requested this execution
+    /// @param answer the answer returned by the agent
+    event AgentRunResult(
+        int256 indexed runId,
+        address requester, 
+        string[] executionSteps,
+        string answer);
+
+    address agentExecutorContract;
+    string modelId;
+    string agentName;
+    string agentDescription;
+    string basePrompt;
+    IAPITool[] tools;
+    uint16 agentMaxIterations; 
+    int256 currentRunId;
+       
+    /// @notice Creates a new agent
+    /// @param _agentExecutorContract points to a contract that implements IERCAgentExecutor
+    /// @param _modelId an identifier for the model that should be used for agent execution
+    ///   can be an ID, name, or hash, depending on what the IERCAgentExecutor implementation details
+    /// @param _name the name of the agent
+    /// @param _description the description of the agent
+    /// @param _basePrompt the base prompt for the agent that describes its task to the LLM
+    /// @param _tools the tools the agent should have access to
+    /// @param _agentMaxIterations the maximum number of iterations an agent should take
+    ///   when running a particular task. One iteration includes one use of a tool. Use
+    ///   this to put an upper limit on the runtime of the agent in case it gets stuck.
+    constructor(
+        address _agentExecutorContract,
+        string memory _modelId,
+        string memory _name,
+        string memory _description,
+        IAPITool[] memory _tools,
+        uint16 _agentMaxIterations
+    ) {
+        agentExecutorContract = _agentExecutorContract;
+        modelId = _modelId;
+        agentName = _name;
+        agentDescription = _description;
+        
+        tools = _tools;
+        agentMaxIterations = _agentMaxIterations;
+        currentRunId = 0;
+    }
     
-    /// @notice Returns the description of this tool, when it should be used
+    /// @notice Returns the name of this agent, should be short and meaningful. 
+    /// @return The name of the agent.
+    function name() external view returns (string memory) {
+        return agentName;
+    }
+    
+    /// @notice Returns the description of this agent, when it should be used
     ///   and what it does at a high level.
-    /// @return Description of the tool.
-    function description() external view returns (string memory);
-    function run(string memory input) external returns (int256 runId, string memory result);
+    /// @return The description of the agent.
+    function description() external view returns (string memory) {
+        return agentDescription;
+    }
+    
+    /// @notice Runs the agent with the given input and returns its final answer
+    ///   to the given task.
+    /// @param input The input to this agent that is generated using the inputDescription.
+    /// @return result, only present when the tool was executed synchronously and runId is -1.
+    ///   Do not use unless the runId returned was -1. 
+    function run(string memory input) external virtual returns (string memory) {
+        /// call precompiles
+        return "";
+    }
 }
