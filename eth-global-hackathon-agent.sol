@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
+// ========= TOOL INTERFACES ========
 
-// ========= HIGH LEVEL INTERFACES ========
 interface IERCAgentTool {
 
     /// @notice describes the various types of input parameters a tool can have.
@@ -77,12 +77,9 @@ interface IERCAgentTool {
     function run(Input memory input, address resultHandler) external returns (int256 runId, string memory result);
 }
 
-/// @notice Interface for interacting with the Twitter API through blockchain operations. 
-/// It defines methods for reading from and writing to Twitter, encapsulating the necessary parameters and return types for these operations. 
-/// This interface is designed to be implemented by contracts that serve as agents for performing Twitter-related actions within a decentralized application, leveraging the Ethereum blockchain for secure and verifiable operations.
-interface ITwitterAPI is IERCAgentTool {
-    function readTweet(string memory tweetId) external returns (string memory);
-    function writeTweet(string memory tweetContent) external returns (bool success);
+interface ITwitterAPITool is IERCAgentTool {
+    function getTweets(Input memory input, address resultHandler) external returns (int256 runId, string memory result);
+    function writeTweet(Input memory input, address resultHandler) external returns (int256 runId, string memory result);
 }
 
 /// ========= SYNCHRONOUS AGENT IMPLEMENTATION ==========
@@ -237,6 +234,39 @@ abstract contract IERCAgent is IERCAgentTool {
     }
 }
 
+abstract contract ITwitterAPIAgent is IERCAgent {
+    ITwitterAPITool twitterAPI;
+    
+    constructor(
+        address _agentExecutorContract,
+        string memory _modelId,
+        string memory _name,
+        string memory _description,
+        string memory _inputDescription,
+        string memory _basePrompt,
+        ITwitterAPITool _twitterAPI,
+        uint16 _agentMaxIterations
+    ) IERCAgent(
+        _agentExecutorContract,
+        _modelId,
+        _name,
+        _description,
+        _inputDescription,
+        _basePrompt,
+        new IERCAgentTool[](0),
+        _agentMaxIterations
+    ) {
+        twitterAPI = _twitterAPI;
+    }
+
+    function getTweets(IERCAgentTool.Input memory input, address resultHandler) external returns (int256, string memory) {
+        return twitterAPI.getTweets(input, resultHandler);
+    }
+    
+    function writeTweet(IERCAgentTool.Input memory input, address resultHandler) external returns (int256, string memory) {
+        return twitterAPI.writeTweet(input, resultHandler);
+    }
+}
 
 /// @notice Used to receive the result of asynchronous agent executions
 interface IERCAgentClient {
@@ -274,166 +304,4 @@ interface IERCAgentExecutor {
         IERCAgentTool[] memory tools,
         string[] memory agentReasoning,
         string memory prompt) external returns (AgentIterationResult memory);
-}
-
-
-// ======= EXAMPLE AGENT AND TOOLS ==========
-
-/// @notice interface for turning a contract function's return value into a human-readable string
-///   so the agent can understand what the tool's execution resulted in.
-interface ToolResultConverter {
-    function convertToString(bytes memory result) external returns (string memory);
-}
-
-/// @notice Simple wrapper tool implementation that can be used to expose simple functions
-///   on smart contracts as tools.
-contract SimpleSmartContractTool is IERCAgentTool {
-
-    string toolName;
-    string toolDescription;
-    address toolContract; 
-    bytes4 toolSelector; 
-    IERCAgentTool.InputDescription toolInputDescription;
-
-    ToolResultConverter toolResultConverter;
-    bool useStaticResult;
-    string staticResult;
-
-    // this implementation only supports singular return types
-    IERCAgentTool.ParamType outputType;
-    
-    /// @notice Creates a new tool.
-    /// @param _name of the tool
-    /// @param _description of the tool
-    /// @param _toolContract address of the contract that implements the tool
-    /// @param _toolSelector selector of the function on _toolContract that the tool should use
-    /// @param _inputDescription must contain all parameters of the function _toolSelector is pointing
-    ///   to. Right now, only supports primitive data types.
-    /// @param _useStaticResult when true, the tool invocation will return a static result string to the
-    ///   agent.
-    /// @param _staticResult the result string to return when _useStaticResult is set to true.
-    ///   Otherwise ignored.
-    /// @param _toolResultConverter when _useStaticResult is false, the return bytes from the contract
-    ///   invocation will be passed to this converter to turn it into a human-readable format for the agent
-    ///   to be able to reason about the result.
-    constructor(
-        string memory _name,
-        string memory _description,
-        address _toolContract,
-        bytes4 _toolSelector,
-        IERCAgentTool.InputDescription memory _inputDescription,
-        bool _useStaticResult,
-        string memory _staticResult,
-        ToolResultConverter _toolResultConverter
-    ) {
-        toolName = _name;
-        toolDescription = _description;
-        toolContract = _toolContract;
-        toolSelector = _toolSelector;
-        toolInputDescription = _inputDescription;
-        toolResultConverter = _toolResultConverter;
-        useStaticResult = _useStaticResult;
-        staticResult = _staticResult;
-    }
-    
-    function name() external view returns (string memory) {
-        return toolName;
-    }
-    
-    function description() external view returns (string memory) {
-        return toolDescription;
-    }
- 
-    function inputDescription() external view returns (IERCAgentTool.InputDescription memory) {
-        return toolInputDescription;
-    }
-       
-    function run(IERCAgentTool.Input memory input, address resultHandler) external virtual returns (int256, string memory) {
-        bytes memory callData = abi.encodeWithSelector(toolSelector, input.abiEncodedParams);
-        (bool success, bytes memory returnValue) = toolContract.call(callData);
-        require(success, "Tool call failed");
-
-        if (useStaticResult == true) {
-            return (-1, staticResult);
-        } else {
-            return (-1, toolResultConverter.convertToString(returnValue));
-        }
-    }
-}
-
-// demo contract
-interface Pool {
-    function deploy(address asset, uint256 amount) external;
-    function withdraw(address asset, uint256 amount) external;
-    function balance(address asset) external returns (uint256);
-}
-
-// import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-
-contract ViewBalanceResultConverter is ToolResultConverter {
-
-    function convertToString(bytes memory result) external override returns (string memory) {
-        (uint256 balance) = abi.decode(result, (uint256));
-
-        return string.concat("The balance is: ", Strings.toString(balance));
-    }
-}
-
-/// @notice demo agent
-contract WalletAgent is IERCAgent {
-
-    constructor() IERCAgent(
-        address(0x19),
-        "llama_model_3",
-        "Wallet Agent",
-        "Use this to deploy or withdraw tokens from a liquidity pool",
-        "The action you want to take, the address of the tokens, and the amount",
-        string(abi.encodePacked(
-            "You are an agent deployed on an Ethereum blockchain, responsible for managing a user's wallet. ", 
-            "The wallet's owner will give you instructons in simple terms, ",
-            "and your goal is to execute the instructions from the user, given the list of tools you can use...")),
-        new IERCAgentTool[](4),
-        10
-    ) {
-        ParamDescription[] memory deployParams = new ParamDescription[](2);
-        deployParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to deposit");
-        deployParams[1] = ParamDescription(ParamType.INT, "amount", "amount of tokens to deposit");
-        tools[0] = new SimpleSmartContractTool(
-            "Deploy",
-            "Deploy funds into the pool",
-            address(0x123),
-            Pool.deploy.selector,
-            IERCAgentTool.InputDescription(deployParams),
-            true,
-            "Successfully deployed",
-            ToolResultConverter(address(0)));
-
-        ParamDescription[] memory withdrawParams = new ParamDescription[](2);
-        withdrawParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to withdraw");
-        withdrawParams[1] = ParamDescription(ParamType.INT, "amount", "amount of tokens to withdraw");
-        tools[1] = new SimpleSmartContractTool(
-            "Withdraw",
-            "Withdraw funds from the pool",
-            address(0x123),
-            Pool.withdraw.selector,
-            IERCAgentTool.InputDescription(withdrawParams),
-            true,
-            "Successfully withdrawn",
-            ToolResultConverter(address(0)));
-
-        ParamDescription[] memory viewBalanceParams = new ParamDescription[](1);
-        viewBalanceParams[0] = ParamDescription(ParamType.ADDRESS, "asset", "address of the token to view balance for");
-        tools[2] = new SimpleSmartContractTool(
-            "ViewBalance",
-            "See user's balance in the pool",
-            address(0x123),
-            Pool.balance.selector,
-            IERCAgentTool.InputDescription(viewBalanceParams),
-            false,
-            "",
-            new ViewBalanceResultConverter());
-        
-        // reusing existing tool
-        tools[3] = IERCAgentTool(address(0x12));
-    }
 }
