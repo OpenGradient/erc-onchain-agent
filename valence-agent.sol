@@ -62,7 +62,7 @@ abstract contract IWriteTweetTool is IValenceAPITool {
     }
 }
 
-// ======= DEUS EX AGENT ==========
+// ======= VALENCE AGENT ==========
 
 /// @notice Implements a synchronous agent that's backed by an on-chain agentExecutor contract
 abstract contract ValenceAgent is IValenceAPITool {
