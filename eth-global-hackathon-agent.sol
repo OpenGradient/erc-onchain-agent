@@ -3,7 +3,7 @@ pragma solidity ^0.8.4;
 
 // ========= TOOL INTERFACES ========
 
-interface IDeusExAPITool {
+interface IValenceAPITool {
 
     /// @notice describes the various types of input parameters a tool can have.
     ///   Right now, only primitive types are supported.
@@ -32,7 +32,7 @@ interface IDeusExAPITool {
 
 // ======= TWITTER API TOOLS ==========
 
-abstract contract IReadTweetTool is IDeusExAPITool {
+abstract contract IReadTweetTool is IValenceAPITool {
     struct Tweet {
             uint256 id;
             address author;
@@ -52,7 +52,7 @@ abstract contract IReadTweetTool is IDeusExAPITool {
     }
 }
 
-abstract contract IWriteTweetTool is IDeusExAPITool {
+abstract contract IWriteTweetTool is IValenceAPITool {
     function name() external pure override returns (string memory) { 
         return "IWriteTweetTool";
     }
@@ -65,7 +65,7 @@ abstract contract IWriteTweetTool is IDeusExAPITool {
 // ======= DEUS EX AGENT ==========
 
 /// @notice Implements a synchronous agent that's backed by an on-chain agentExecutor contract
-abstract contract DeusExAgent is IDeusExAPITool {
+abstract contract ValenceAgent is IValenceAPITool {
 
     /// @notice Logged when the agent completes an execution triggered by calling run.
     /// @param runId the ID of the run
@@ -85,7 +85,7 @@ abstract contract DeusExAgent is IDeusExAPITool {
     string agentName;
     string agentDescription;
     string basePrompt;
-    IDeusExAPITool[] tools;
+    IValenceAPITool[] tools;
     uint16 agentMaxIterations; 
     int256 currentRunId;
        
@@ -104,7 +104,7 @@ abstract contract DeusExAgent is IDeusExAPITool {
         string memory _modelId,
         string memory _name,
         string memory _description,
-        IDeusExAPITool[] memory _tools,
+        IValenceAPITool[] memory _tools,
         uint16 _agentMaxIterations
     ) {
         agentExecutorContract = _agentExecutorContract;
