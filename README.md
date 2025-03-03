@@ -1,4 +1,4 @@
-# ERC for on-chain autonomous agents
+# [Archive] ERC for on-chain autonomous agents
 
 This repo contains the ERC and associated code for definint agents that are fully verifiable and executable on-chain.
 
